@@ -1,0 +1,11 @@
+*.config
+*.files
+*.creator
+*.user
+*.includes
+*.pro
+*.autosave
+nbproject
+nbproject/*
+build
+build/*
