@@ -1,0 +1,16 @@
+#ifndef __DATADIST_IDL__
+#define __DATADIST_IDL__
+                                                                                
+module Data
+{
+                                                                                
+interface ServiceA{
+   boolean CallServiceRoutineA ( in    long num1,
+                                 inout long num2,
+                                 out   long retNum );
+   boolean CallServiceRoutineB ( inout long num1,
+                                 inout long num2);
+};
+
+};
+#endif

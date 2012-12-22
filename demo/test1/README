@@ -1,0 +1,16 @@
+Resources:
+
+http://www.yolinux.com/TUTORIALS/CORBA.html
+http://omniorb.sourceforge.net/omni41/omniORB/
+
+
+Commands:
+
+omniidl -bcxx Data.idl
+
+
+Ubuntu packages:
+
+
+
+
