@@ -1,0 +1,6 @@
+
+
+interface StringSender {
+    void sendString(in string s);
+};
+
