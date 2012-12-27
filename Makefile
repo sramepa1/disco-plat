@@ -1,6 +1,6 @@
 CPPFLAGS      = -Wall -pedantic -O0 -g -Ibuild
 LDFLAGS       = -g
-LIBS          = -lmico2.3.13 -lpthread -ldl -lssl
+LIBS          = -lmico2.3.13 -lpthread -ldl -lssl -lcrypto -lz
 
 OBJECTS = $(patsubst src/%.cpp,build/%.o,$(wildcard src/*.cpp))
 
