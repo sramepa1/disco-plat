@@ -5,6 +5,7 @@
 #include <string>
 #include <sstream>
 
+#include <sys/utsname.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
@@ -36,6 +37,8 @@ class NetworkImpl : virtual public POA_Network {
 int main(int argc, char** argv) {
 
     bool haveOther;
+    utsname myUname;
+    uname(&myUname);
     
     if(argc == 1) {
         // first node
@@ -113,7 +116,10 @@ int main(int argc, char** argv) {
         }
         
         otherObject = Network::_narrow(otherObj);
-        otherObject->joinNetwork(thisAddr.str().c_str());
+        
+        stringstream thisUnameAddr;
+        thisUnameAddr << "inet:" << myUname.nodename << ":" << myPort;
+        otherObject->joinNetwork(thisUnameAddr.str().c_str());
     }
     
     
