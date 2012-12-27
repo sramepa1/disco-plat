@@ -1,7 +1,7 @@
 CC            = g++
 CPPFLAGS      = -g -c
 LDFLAGS       = -g
-LIBS          = -lmico2.3.13 -lpthread -ldl
+LIBS          = -lmico2.3.13 -lpthread -ldl -lssl
 OBJECTS       = Interface.o Node.o
 IDL           = idl
                                                                                 
