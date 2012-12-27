@@ -22,7 +22,7 @@ build/%.o: src/%.cpp
 	g++ $(CPPFLAGS) -c -o $@ $<
 
 disco-plat: build/Interface.o $(OBJECTS) 
-	g++ $(LDFLAGS) -o $@ $<
+	g++ $(LDFLAGS) -o $@ build/Interface.o $(OBJECTS) $(LIBS)
 
 clean:
 	rm -rf build
