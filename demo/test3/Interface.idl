@@ -1,0 +1,9 @@
+
+interface Network {
+
+    void joinNetwork(in string myAddr);
+
+    void sendInteger(in long number);
+
+};
+
