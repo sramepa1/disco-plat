@@ -13,11 +13,9 @@ using namespace std;
 
 // globals
 int myPort;
-
 string otherAddr;
-bool haveOther;
-Network_var otherObject;
 
+bool canSend;
 
 class NetworkImpl : virtual public POA_Network {
     
@@ -27,22 +25,27 @@ class NetworkImpl : virtual public POA_Network {
     
     void sendInteger(CORBA::Long number) {
         cout << "Node (port " << myPort << ") - recieved number: " << number << endl;
+        canSend = true;
     }
 };
 
 
 int main(int argc, char** argv) {
 
+    bool haveOther;
+    
     utsname myUname;
     uname(&myUname);
     
     if(argc == 1) {
         // first node
         haveOther = false;
+        canSend = false;
         myPort = PORT;
     } else {
         // second node
         haveOther = true;
+        canSend = true;
         myPort = PORT + 1;
     }
     
@@ -72,6 +75,8 @@ int main(int argc, char** argv) {
     poa->activate_object(myObject);
     myObject->_this();
     
+    
+    Network_var otherObject;
     
     if(argc != 1) {
         // create connection to first node
@@ -109,8 +114,9 @@ int main(int argc, char** argv) {
         }
         
         int randomNumber = rand();
-        if(haveOther && randomNumber % 50 == 0) {
+        if(canSend && haveOther && randomNumber % 50 == 0) {
             cout << "Node (port " << myPort << ") - sending number: " << randomNumber << endl;
+            canSend = false;
             otherObject->sendInteger((CORBA::Long)randomNumber);
         }
     }
