@@ -1,0 +1,41 @@
+#ifndef __DATADIST_IDL__
+#define __DATADIST_IDL__
+                                                                                
+module disco_plat
+{
+
+
+struct nodeID {
+    
+    string identifier;    
+    
+};
+
+struct blob {
+    
+    nodeID source;
+    
+    // source node
+    // work request
+    // work assignment
+    // token   
+    
+};
+
+                                                                                
+interface Neighbour {
+
+    nodeID ConnectAsLeftNode(in nodeID newNodeID);
+    void UpdateRightNode(in nodeID newNodeID);
+    
+    void NeigbourDied(in nodeID reportingNodeID);
+    void CircleReconect(in nodeID answeringNodeID);
+    
+    void Boomerang(in blob data);
+
+};
+
+
+
+};
+#endif
