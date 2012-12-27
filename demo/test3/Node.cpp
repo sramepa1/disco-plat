@@ -5,7 +5,10 @@
 #include <string>
 #include <sstream>
 
-#include <sys/utsname.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+#include <netdb.h>
 
 #include "Interface.h"
 
@@ -34,9 +37,6 @@ int main(int argc, char** argv) {
 
     bool haveOther;
     
-    utsname myUname;
-    uname(&myUname);
-    
     if(argc == 1) {
         // first node
         haveOther = false;
@@ -49,8 +49,34 @@ int main(int argc, char** argv) {
         myPort = PORT + 1;
     }
     
+    struct ifaddrs *ifaddr, *ifa;
+    int family, s;
+    char host[NI_MAXHOST];
+
+    if (getifaddrs(&ifaddr) == -1) {
+        return 1;
+    }
+
+    for(ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        
+        if (ifa->ifa_addr == NULL)
+            continue;  
+
+        s = getnameinfo(ifa->ifa_addr, sizeof(sockaddr_in), host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+
+        if((strcmp(ifa->ifa_name, "wlan0") == 0) && (ifa->ifa_addr->sa_family == AF_INET)) {
+            
+            if(s != 0) {
+                return 1;
+            }
+            break;
+        }
+    }
+
+    freeifaddrs(ifaddr);
+    
     stringstream thisAddr;
-    thisAddr << "inet:" << myUname.nodename << ":" << myPort;
+    thisAddr << "inet:" << host << ":" << myPort;
     
     cout << "Node (port " << myPort << ") - my address: " << thisAddr.str() << endl;
     
