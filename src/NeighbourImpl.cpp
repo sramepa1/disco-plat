@@ -1,56 +1,54 @@
 #include "NeighbourImpl.h"
 
+using namespace disco_plat;
+
 /*****************************************************************/
 //  LeftNeighbour
 
-disco_plat::nodeID *LeftNeighbourImpl::ConnectAsLeftNode(const disco_plat::nodeID &newNodeID)
-{
+nodeID* LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID) {
+
 }
 
 
-void LeftNeighbourImpl::NeigbourDied(const disco_plat::nodeID &reportingNodeID)
-{
+void LeftNeighbourImpl::NeigbourDied(const nodeID& reportingNodeID) {
+
 }
 
 
-void LeftNeighbourImpl::UpdateRightNode(const disco_plat::nodeID &newNodeID)
-{
+void LeftNeighbourImpl::UpdateRightNode(const nodeID& newNodeID) {
+
 }
 
 
-void LeftNeighbourImpl::UpdateLeftNode(const disco_plat::nodeID &newNodeID)
-{
+void LeftNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
+
 }
 
 
-void LeftNeighbourImpl::Boomerang(const disco_plat::blob &data)
-{
+void LeftNeighbourImpl::Boomerang(const blob& data) {
+
 }
 
 
 /*****************************************************************/
 //  RightNeighbour
 
-disco_plat::nodeID *RightNeighbourImpl::ConnectAsLeftNode(const disco_plat::nodeID &newNodeID)
-{
+nodeID* RightNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID) {
+
 }
 
 
-void RightNeighbourImpl::NeigbourDied(const disco_plat::nodeID &reportingNodeID)
-{
+void RightNeighbourImpl::NeigbourDied(const nodeID& reportingNodeID) {
 }
 
 
-void RightNeighbourImpl::UpdateRightNode(const disco_plat::nodeID &newNodeID)
-{
+void RightNeighbourImpl::UpdateRightNode(const nodeID& newNodeID) {
 }
 
 
-void RightNeighbourImpl::UpdateLeftNode(const disco_plat::nodeID &newNodeID)
-{
+void RightNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
 }
 
 
-void RightNeighbourImpl::Boomerang(const disco_plat::blob &data)
-{
+void RightNeighbourImpl::Boomerang(const blob& data) {
 }

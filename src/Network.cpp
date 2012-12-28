@@ -42,7 +42,7 @@ Network::Network(int port, const char* remoteAddr) : sendThreadRunning(true) {
     char** argvORB = new char*[argcORB];
 
     argvORB[0] = new char[strlen("disco-plat") + 1];
-    memcpy(argvORB[1], "disco-plat", strlen("disco-plat") + 1);
+    memcpy(argvORB[0], "disco-plat", strlen("disco-plat") + 1);
 
     argvORB[1] = new char[strlen("-ORBIIOPAddr") + 1];
     memcpy(argvORB[1], "-ORBIIOPAddr", strlen("-ORBIIOPAddr") + 1);
@@ -65,7 +65,7 @@ Network::Network(int port, const char* remoteAddr) : sendThreadRunning(true) {
     leftObject->_this();
 
     // starting recv thread
-    if(!pthread_create(&recvThread, NULL, &Network::recvThreadMain, this)) {
+    if(pthread_create(&recvThread, NULL, &Network::recvThreadMain, this)) {
         throw "Cannot create recieving thread!!!";
     }
 
@@ -93,7 +93,7 @@ Network::Network(int port, const char* remoteAddr) : sendThreadRunning(true) {
     }
 
     // starting send thread
-    if(!pthread_create(&sendThread, NULL, &Network::sendThreadMain, this)) {
+    if(pthread_create(&sendThread, NULL, &Network::sendThreadMain, this)) {
         throw "Cannot create sending thread!!!";
     }
 }
@@ -192,3 +192,15 @@ LeftNeighbourIface& Network::getMyLeftInterface() {
     return *leftIface;
 }
 
+// TODO: mutex and try-catch - it is needed?
+void Network::changeRightNeighbour(nodeID newID) {
+    CORBA::Object_var tempObj;
+    rightID = newID;
+    BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", (char*)newID.identifier, rightRemoteObject, LeftNeighbour);
+}
+
+void Network::changeLeftNeighbour(nodeID newID) {
+    CORBA::Object_var tempObj;
+    leftID = newID;
+    BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (char*)newID.identifier, leftRemoteObject, RightNeighbour);
+}

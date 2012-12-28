@@ -46,6 +46,13 @@ public:
 
     RightNeighbourIface& getMyRightInterface();
     LeftNeighbourIface& getMyLeftInterface();
+
+    void changeRightNeighbour(disco_plat::nodeID newID);
+    void changeLeftNeighbour(disco_plat::nodeID newID);
+
+private:
+    Network(const Network&) {}
+    void operator= (const Network&) {}
 };
 
 #endif // NETWORK_H
