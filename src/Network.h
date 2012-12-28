@@ -39,7 +39,7 @@ class Network {
     LeftNeighbourIface* leftIface;
 
 public:
-    Network(int port, const char* remoteAddr);
+    Network(int port, const char* networkInterface, const char* remoteAddr);
     ~Network();
 
     void enqueItem(QueueItem* item);
@@ -47,8 +47,11 @@ public:
     RightNeighbourIface& getMyRightInterface();
     LeftNeighbourIface& getMyLeftInterface();
 
-    void changeRightNeighbour(disco_plat::nodeID newID);
-    void changeLeftNeighbour(disco_plat::nodeID newID);
+    const disco_plat::nodeID& getRightID() { return rightID; }
+    const disco_plat::nodeID& getLeftID() { return leftID; }
+
+    void changeRightNeighbour(const disco_plat::nodeID& newID);
+    void changeLeftNeighbour(const disco_plat::nodeID& newID);
 
 private:
     Network(const Network&) {}

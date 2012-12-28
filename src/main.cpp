@@ -63,10 +63,10 @@ int main(int argc, char** argv) {
     }
 
     // create connection
-    networkModule = new Network(port, address);
+    networkModule = new Network(port, "ham0", address);  // TODO: parse network interface name from args
 
     // some useful work... :)
-    sleep(1);
+    sleep(60);
 
     // network cleanup
     delete networkModule;

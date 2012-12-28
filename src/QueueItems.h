@@ -17,16 +17,6 @@ public:
 /*****************************************************************/
 //  LeftNeighbour
 
-// TODO: maybe not needed
-//class Left_ConnectAsLeftNode : public QueueItem {
-//    const ::disco_plat::nodeID newNodeID;
-//public:
-//    Left_ConnectAsLeftNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
-//    void sendMe(NeighbourPair neighbours) {
-//        neighbours.second->ConnectAsLeftNode(newNodeID);   // TODO: returned value???
-//    }
-//};
-
 class Left_NeigbourDied : public QueueItem {
     const ::disco_plat::nodeID reportingNodeID;
 public:

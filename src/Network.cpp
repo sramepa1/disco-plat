@@ -5,7 +5,10 @@
 #include <sstream>
 #include <cstring>
 
-#include <sys/utsname.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+#include <netdb.h>
 #include <unistd.h>
 
 #include "../build/Interface.h"
@@ -23,17 +26,40 @@ using namespace disco_plat;
     } \
     var = type::_narrow(tempObj);
 
-Network::Network(int port, const char* remoteAddr) : sendThreadRunning(true) {
+Network::Network(int port, const char* networkInterface, const char* remoteAddr) : sendThreadRunning(true) {
 
     pthread_mutex_init(&queueMutex, NULL);
     rightIface = new RightNeighbourIface(this);
     leftIface = new LeftNeighbourIface(this);
 
-    utsname myUname;
-    uname(&myUname);
+    // obtain IP address of desired network interface
+    ifaddrs* firstAddr;
+    ifaddrs* currentAddr;
+    char myIPAddr[NI_MAXHOST];
+
+    if(getifaddrs(&firstAddr) == -1) {
+        throw "Cannot obatin interface addresses!!!";
+    }
+
+    for(currentAddr = firstAddr; currentAddr != NULL; currentAddr = currentAddr->ifa_next) {
+
+        if(currentAddr->ifa_addr == NULL) {
+            continue;
+        }
+        int result = getnameinfo(currentAddr->ifa_addr, sizeof(sockaddr_in), myIPAddr, NI_MAXHOST, NULL, 0,
+                                 NI_NUMERICHOST);
+
+        if((strcmp(currentAddr->ifa_name, networkInterface) == 0) && (currentAddr->ifa_addr->sa_family == AF_INET)) {
+            if(result != 0) {
+                throw "Cannot obatin address of desired network interface!!!";
+            }
+            break;
+        }
+    }
+    freeifaddrs(firstAddr);
 
     stringstream thisAddrStr;
-    thisAddrStr << "inet:" << myUname.nodename << ":" << port;
+    thisAddrStr << "inet:" << myIPAddr << ":" << port;
     myAddr = thisAddrStr.str();
 
     cout << "Node (address: " << myAddr << ") - initializing" << endl;
@@ -86,7 +112,7 @@ Network::Network(int port, const char* remoteAddr) : sendThreadRunning(true) {
 
         nodeID myID;
         myID.identifier = myAddr.c_str();
-        leftID = *leftRemoteObject->ConnectAsLeftNode(myID);
+        leftID = *rightRemoteObject->ConnectAsLeftNode(myID);
         BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (char*)leftID.identifier, leftRemoteObject, RightNeighbour);
 
         getMyLeftInterface().UpdateRightNode(myID);
@@ -96,6 +122,8 @@ Network::Network(int port, const char* remoteAddr) : sendThreadRunning(true) {
     if(pthread_create(&sendThread, NULL, &Network::sendThreadMain, this)) {
         throw "Cannot create sending thread!!!";
     }
+
+    cout << "Node (address: " << myAddr << ") - initialized" << endl;
 }
 
 Network::~Network() {
@@ -193,13 +221,13 @@ LeftNeighbourIface& Network::getMyLeftInterface() {
 }
 
 // TODO: mutex and try-catch - it is needed?
-void Network::changeRightNeighbour(nodeID newID) {
+void Network::changeRightNeighbour(const nodeID& newID) {
     CORBA::Object_var tempObj;
     rightID = newID;
     BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", (char*)newID.identifier, rightRemoteObject, LeftNeighbour);
 }
 
-void Network::changeLeftNeighbour(nodeID newID) {
+void Network::changeLeftNeighbour(const nodeID& newID) {
     CORBA::Object_var tempObj;
     leftID = newID;
     BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (char*)newID.identifier, leftRemoteObject, RightNeighbour);
