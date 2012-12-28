@@ -9,12 +9,16 @@
 #include <unistd.h>
 
 #include "../build/Interface.h"
+#include "NeighbourIface.h"
 
 using namespace std;
 using namespace disco_plat;
 
 
 Network::Network(int port, const char* remoteAddr) : sendThreadRunning(true) {
+
+    rightIface = new RightNeighbourIface(this);
+    leftIface = new LeftNeighbourIface(this);
 
     utsname myUname;
     uname(&myUname);
@@ -47,7 +51,13 @@ Network::Network(int port, const char* remoteAddr) : sendThreadRunning(true) {
 Network::~Network() {
     // TODO: join threads
     sendThreadRunning = false;
-    orb->shutdown(FALSE);
+    orb->shutdown(TRUE);
+}
+
+void Network::enqueItem(QueueItem* item) {
+    pthread_mutex_lock(&queueMutex);
+    sendQueue.push_back(item);
+    pthread_mutex_unlock(&queueMutex);
 }
 
 
@@ -96,7 +106,19 @@ void* Network::sendThreadMain(void* ptr) {
             instance->sendQueue.pop_front();
             pthread_mutex_unlock(&instance->queueMutex);
 
-            // TODO: send item from queue
+            try {
+                current->sendMe(make_pair(instance->rightRemoteObject, instance->leftRemoteObject));
+            } catch(CORBA::SystemException& ex) {       // TODO: better exception handling
+                cerr << "Caught CORBA::SystemException." << endl;
+                ex._print(cerr);
+                cerr << endl;
+            } catch(CORBA::Exception& ex) {
+                cerr << "Caught CORBA::Exception." << endl;
+                ex._print(cerr);
+                cerr << endl;
+            } catch(...) {
+                cerr << "Caught unknown exception." << endl;
+            }
 
             delete current;
 
@@ -108,3 +130,12 @@ void* Network::sendThreadMain(void* ptr) {
 
     return NULL;
 }
+
+RightNeighbourIface& Network::getMyRightInterface() {
+    return *rightIface;
+}
+
+LeftNeighbourIface &Network::getMyLeftInterface() {
+    return *leftIface;
+}
+

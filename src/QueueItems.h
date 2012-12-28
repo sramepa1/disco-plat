@@ -17,7 +17,7 @@ public:
 /*****************************************************************/
 //  LeftNeighbour
 
-// TODO: may be not needed
+// TODO: maybe not needed
 //class Left_ConnectAsLeftNode : public QueueItem {
 //    const ::disco_plat::nodeID newNodeID;
 //public:
@@ -59,7 +59,7 @@ class Left_Boomerang : public QueueItem {
 public:
     Left_Boomerang(const ::disco_plat::blob& data) : data(data) {}
     void sendMe(NeighbourPair neighbours) {
-        neighbours.second->Boomerang(newNodeID);
+        neighbours.second->Boomerang(data);
     }
 };
 
@@ -85,12 +85,12 @@ public:
     }
 };
 
-class Right_UpdateRightNode : public QueueItem {
+class Right_UpdateLeftNode : public QueueItem {
     const ::disco_plat::nodeID newNodeID;
 public:
-    Right_UpdateRightNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
+    Right_UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
     void sendMe(NeighbourPair neighbours) {
-        neighbours.first->UpdateRightNode(newNodeID);
+        neighbours.first->UpdateLeftNode(newNodeID);
     }
 };
 
@@ -99,7 +99,7 @@ class Right_Boomerang : public QueueItem {
 public:
     Right_Boomerang(const ::disco_plat::blob& data) : data(data) {}
     void sendMe(NeighbourPair neighbours) {
-        neighbours.first->Boomerang(newNodeID);
+        neighbours.first->Boomerang(data);
     }
 };
 
