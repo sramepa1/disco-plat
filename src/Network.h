@@ -2,6 +2,7 @@
 #define NETWORK_H
 
 #include <deque>
+#include <string>
 
 #include <pthread.h>
 #include <CORBA.h>
@@ -15,6 +16,8 @@ class Network {
 
     CORBA::ORB_var orb;
     PortableServer::POA_var poa;
+
+    std::string myAddr;
 
     std::deque<QueueItem*> sendQueue;
     pthread_mutex_t queueMutex;
