@@ -1,4 +1,5 @@
 
+#include "globals.h"
 #include "Network.h"
 
 #include <iostream>
@@ -13,6 +14,9 @@
 
 
 using namespace std;
+
+// global vars definition
+Network* networkModule;
 
 static struct option long_options[] = {
     {"port", 1, 0, 'p'},
@@ -58,10 +62,14 @@ int main(int argc, char** argv) {
         }
     }
 
+    // create connection
+    networkModule = new Network(port, address);
 
-    Network network(port, address);
+    // some useful work... :)
+    sleep(1);
 
-
+    // network cleanup
+    delete networkModule;
     
     return 0;
 }
