@@ -11,21 +11,25 @@ struct nodeID {
     
 };
 
+
+enum token { ping, workRequest, workAssignment, result, blackToken, whiteToken };
+
+
 struct blob {
     
-    nodeID source;
-    
-    // source node
-    // work request
-    // work assignment
-    // token   
-    
+    nodeID sourceNode;
+    unsigned long computationID;
+
+    token messageToken;
+
+    sequence<char> data;
+    unsigned short dataLenght;
+
 };
 
                                                                                 
-interface Neighbour {
+interface LeftNeighbour {
 
-    
     // Connects a new node to the cicle.
     // New node is added to existing one as its left neighbour.
     // This new node has to fix reference returned by this method and close the circle
@@ -44,7 +48,17 @@ interface Neighbour {
 };
 
 
+interface RightNeighbour {
+
+    nodeID ConnectAsLeftNode(in nodeID newNodeID);
+    void NeigbourDied(in nodeID reportingNodeID);
+    void UpdateRightNode(in nodeID newNodeID);
+    void UpdateLeftNode(in nodeID newNodeID);
+    void Boomerang(in blob data);
 
 };
+
+};
+
 #endif
 
