@@ -1,4 +1,5 @@
 #include "NeighbourImpl.h"
+#include "NeighbourIface.h"
 
 #include "Network.h"
 #include "globals.h"
@@ -25,16 +26,25 @@ void LeftNeighbourImpl::NeigbourDied(const nodeID& reportingNodeID) {
 
 void LeftNeighbourImpl::UpdateRightNode(const nodeID& newNodeID) {
     cout << "Recieved message UpdateRightNode from left neighbour" << endl;
+    networkModule->changeRightNeighbour(newNodeID);
 }
 
 
 void LeftNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
     cout << "Recieved message UpdateLeftNode from left neighbour" << endl;
+    networkModule->changeLeftNeighbour(newNodeID);
 }
 
 
 void LeftNeighbourImpl::Boomerang(const blob& data) {
     cout << "Recieved message Boomerang from left neighbour" << endl;
+
+    //TODO logiku pro zpracovani dat
+
+    RightNeighbourIface& right = networkModule->getMyRightInterface();
+    right.Boomerang(data);
+
+    cout << "Sent message Boomerang to right neighbour" << endl;
 }
 
 
@@ -63,11 +73,16 @@ void RightNeighbourImpl::UpdateRightNode(const nodeID& newNodeID) {
 
 void RightNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
     cout << "Recieved message UpdateLeftNode from right neighbour" << endl;
+    networkModule->changeLeftNeighbour(newNodeID);
 }
 
 
 void RightNeighbourImpl::Boomerang(const blob& data) {
+
     cout << "Recieved message Boomerang from right neighbour" << endl;
+
+    // this cannot happen - don't know what to do
+    throw "From right nieghbour came boomerang message. This is forbidden since boomerang goes in right-left direction only!";
 }
 
 
