@@ -11,13 +11,10 @@ using namespace disco_plat;
 /*****************************************************************/
 //  LeftNeighbour
 
-nodeID* LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID) {
-
+void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
     cout << "Recieved message ConnectAsLeftNode from left neighbour" << endl;
-
-    nodeID* oldID = new nodeID(networkModule->getLeftID());
+    oldLeftNodeID = new nodeID(networkModule->getLeftID());
     networkModule->changeLeftNeighbour(newNodeID);
-    return oldID;   // And who performs delete???
 }
 
 
@@ -44,7 +41,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 /*****************************************************************/
 //  RightNeighbour
 
-nodeID* RightNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID) {
+void RightNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
 
     cout << "Recieved message ConnectAsLeftNode from right neighbour" << endl;
 
@@ -72,3 +69,9 @@ void RightNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
 void RightNeighbourImpl::Boomerang(const blob& data) {
     cout << "Recieved message Boomerang from right neighbour" << endl;
 }
+
+
+
+
+
+

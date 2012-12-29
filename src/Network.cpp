@@ -112,7 +112,8 @@ Network::Network(int port, const char* networkInterface, const char* remoteAddr)
 
         nodeID myID;
         myID.identifier = myAddr.c_str();
-        leftID = *rightRemoteObject->ConnectAsLeftNode(myID);
+        nodeID* leftPtr = &leftID;
+        rightRemoteObject->ConnectAsLeftNode(myID, leftPtr);
         BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (char*)leftID.identifier, leftRemoteObject, RightNeighbour);
 
         getMyLeftInterface().UpdateRightNode(myID);
