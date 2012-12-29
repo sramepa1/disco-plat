@@ -225,11 +225,11 @@ LeftNeighbourIface& Network::getMyLeftInterface() {
 void Network::changeRightNeighbour(const nodeID& newID) {
     CORBA::Object_var tempObj;
     rightID = newID;
-    BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", (char*)newID.identifier, rightRemoteObject, LeftNeighbour);
+    BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", (const char*)newID.identifier, rightRemoteObject, LeftNeighbour);
 }
 
 void Network::changeLeftNeighbour(const nodeID& newID) {
     CORBA::Object_var tempObj;
     leftID = newID;
-    BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (char*)newID.identifier, leftRemoteObject, RightNeighbour);
+    BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)newID.identifier, leftRemoteObject, RightNeighbour);
 }
