@@ -14,6 +14,11 @@ using namespace disco_plat;
 
 void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
     cout << "Recieved message ConnectAsLeftNode from left neighbour" << endl;
+
+    if(strcmp(newNodeID.algorithm, networkModule->getMyID().algorithm) != 0) {
+        throw ConnectionError("Used algorithms does not match!");
+    }
+
     oldLeftNodeID = new nodeID(networkModule->getLeftID());
     networkModule->changeLeftNeighbour(newNodeID);
 }

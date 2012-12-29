@@ -28,6 +28,9 @@ struct blob {
 
 };
 
+exception ConnectionError {
+    string message;
+};
                                                                                 
 interface LeftNeighbour {
 
