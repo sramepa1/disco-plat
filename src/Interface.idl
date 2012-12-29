@@ -7,12 +7,13 @@ module disco_plat
 
 struct nodeID {
     
-    string identifier;    
+    string identifier;
+    string algorithm;
     
 };
 
 
-enum token { ping, workRequest, workAssignment, result, blackToken, whiteToken };
+enum type { ping, workRequest, workAssignment, result, terminationToken, terminate };
 
 
 struct blob {
@@ -20,10 +21,10 @@ struct blob {
     nodeID sourceNode;
     unsigned long computationID;
 
-    token messageToken;
+    type messageType;
 
+    unsigned short dataLength;
     sequence<char> data;
-    unsigned short dataLenght;
 
 };
 
@@ -33,7 +34,7 @@ interface LeftNeighbour {
     // Connects a new node to the cicle.
     // New node is added to existing one as its left neighbour.
     // This new node has to fix reference returned by this method and close the circle
-    nodeID ConnectAsLeftNode(in nodeID newNodeID);
+    void ConnectAsLeftNode(in nodeID newNodeID, out nodeID oldLeftNodeID);
     
     // Informs the sircle that a node died. Message shall be resend in the original direction till it finds the other end.
     // Shall be folowed by closing cirlcle form the end.
@@ -50,7 +51,7 @@ interface LeftNeighbour {
 
 interface RightNeighbour {
 
-    nodeID ConnectAsLeftNode(in nodeID newNodeID);
+    void ConnectAsLeftNode(in nodeID newNodeID, out nodeID oldLeftNodeID);
     void NeigbourDied(in nodeID reportingNodeID);
     void UpdateRightNode(in nodeID newNodeID);
     void UpdateLeftNode(in nodeID newNodeID);
