@@ -4,9 +4,12 @@
 
 #include <iostream>
 
+extern "C" {
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <getopt.h>
+}
 
 #define DEFAULT_PORT 1234
 #define ERR_INVALID_ARGUMENTS 1
@@ -36,9 +39,9 @@ int main(int argc, char** argv) {
     */
 
     int port = DEFAULT_PORT;
-    char* address = NULL;
-    char* name = (char*) "ham0";
-    char* file = NULL;
+    const char* address = NULL;
+    const char* name = "ham0";
+    const char* file = NULL;
 
     int character;
     int option_index = 0;
@@ -50,31 +53,15 @@ int main(int argc, char** argv) {
                 break;
 
             case 'a' :
-                {
-                    int lenght = strlen(optarg);
-                    address = new char[lenght + 1];
-                    memcpy(address, optarg, lenght);
-                    address[lenght] = 0;
-                }
-
+                address = strdup(optarg);
                 break;
 
             case 'n' :
-                {
-                    int lenght = strlen(optarg);
-                    name = new char[lenght + 1];
-                    memcpy(name, optarg, lenght);
-                    name[lenght] = 0;
-                }
+                name = strdup(optarg);
+                break;
 
             case 'f' :
-                {
-                    int lenght = strlen(optarg);
-                    file = new char[lenght + 1];
-                    memcpy(file, optarg, lenght);
-                    file[lenght] = 0;
-                }
-
+                file = strdup(optarg);
                 break;
 
             default:
@@ -94,6 +81,6 @@ int main(int argc, char** argv) {
 
     // network cleanup
     delete networkModule;
-    
+
     return 0;
 }

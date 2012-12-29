@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
 
         s = getnameinfo(ifa->ifa_addr, sizeof(sockaddr_in), host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
 
-        if((strcmp(ifa->ifa_name, "wlan0") == 0) && (ifa->ifa_addr->sa_family == AF_INET)) {
+        if((strcmp(ifa->ifa_name, "ham0") == 0) && (ifa->ifa_addr->sa_family == AF_INET)) {
             
             if(s != 0) {
                 return 1;
