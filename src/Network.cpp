@@ -21,7 +21,7 @@ using namespace disco_plat;
 #define BIND_AND_ASSIGN(objectIDL, addr, var, type) \
     tempObj = orb->bind(objectIDL, addr); \
     if (CORBA::is_nil(tempObj)) { \
-        cerr << "Node (port " << myAddr << ") - cannot bind to " << addr << endl; \
+        cerr << "Node (port " << myID.identifier << ") - cannot bind to " << addr << endl; \
         throw "Cannot bind!"; \
     } \
     var = type::_narrow(tempObj);
@@ -61,25 +61,17 @@ Network::Network(int port, const char* networkInterface, const char* algorithm) 
 
     stringstream thisAddrStr;
     thisAddrStr << "inet:" << myIPAddr << ":" << port;
-    myAddr = thisAddrStr.str();
-    myAlgo = string(algorithm);
-
+    myID.identifier = thisAddrStr.str().c_str();
     myID.algorithm = algorithm;
-    myID.identifier = myAddr.c_str();
 
-    cout << "Node (address: " << myAddr << ") - initializing" << endl;
+    cout << "Node (address: " << myID.identifier << ") - initializing" << endl;
 
     int argcORB = 3;
     char** argvORB = new char*[argcORB];
 
-    argvORB[0] = new char[strlen("disco-plat") + 1];
-    memcpy(argvORB[0], "disco-plat", strlen("disco-plat") + 1);
-
-    argvORB[1] = new char[strlen("-ORBIIOPAddr") + 1];
-    memcpy(argvORB[1], "-ORBIIOPAddr", strlen("-ORBIIOPAddr") + 1);
-
-    argvORB[2] = new char[myAddr.size() + 1];
-    memcpy(argvORB[2], myAddr.c_str(), myAddr.size() + 1);
+    argvORB[0] = strdup("disco-plat");
+    argvORB[1] = strdup("-ORBIIOPAddr");
+    argvORB[2] = strdup(myID.identifier);
 
     // initialization
     orb = CORBA::ORB_init(argcORB, argvORB, "mico-local-orb");
@@ -97,7 +89,7 @@ Network::Network(int port, const char* networkInterface, const char* algorithm) 
 
     poa->the_POAManager()->activate();
 
-    cout << "Node (address: " << myAddr << ") - initialized" << endl;
+    cout << "Node (address: " << myID.identifier << ") - initialized" << endl;
 }
 
 void Network::start(const char* remoteAddr) {
@@ -113,23 +105,29 @@ void Network::start(const char* remoteAddr) {
 
         if(remoteAddr == NULL) {
             // first node case
-            rightID.identifier = myAddr.c_str();
-            BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", myAddr.c_str(), rightRemoteObject, LeftNeighbour);
+            rightID = myID;
+            BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", myID.identifier, rightRemoteObject, LeftNeighbour);
 
-            leftID.identifier = myAddr.c_str();
-            BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", myAddr.c_str(), leftRemoteObject, RightNeighbour);
+            leftID = myID;
+            BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", myID.identifier, leftRemoteObject, RightNeighbour);
 
         } else {
             // non-first node case
             rightID.identifier = remoteAddr;
             BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", remoteAddr, rightRemoteObject, LeftNeighbour);
 
-            nodeID myID;
-            myID.identifier = myAddr.c_str();
             nodeID* leftPtr = &leftID;
-            rightRemoteObject->ConnectAsLeftNode(myID, leftPtr);
+            try {
+                rightRemoteObject->ConnectAsLeftNode(myID, leftPtr);
+            } catch(ConnectionError& ex) {
+                stringstream exStr;
+                exStr << "Connection refused - reason: " << (const char*)ex.message;
+                throw exStr.str().c_str();
+            }
+
             leftID = *leftPtr;
-            BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (char*)leftID.identifier, leftRemoteObject,
+            myID.algorithm = rightID.algorithm = leftID.algorithm;
+            BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)leftID.identifier, leftRemoteObject,
                             RightNeighbour);
 
             getMyLeftInterface().UpdateRightNode(myID);
@@ -148,7 +146,7 @@ void Network::start(const char* remoteAddr) {
 }
 
 Network::~Network() {
-    cout << "Node (address: " << myAddr << ") - closing network module" << endl;
+    cout << "Node (address: " << myID.identifier << ") - closing network module" << endl;
 
     sendThreadRunning = false;
     orb->shutdown(TRUE);
@@ -159,7 +157,7 @@ Network::~Network() {
     pthread_mutex_destroy(&queueMutex);
     pthread_mutex_destroy(&bindMutex);
 
-    cout << "Node (address: " << myAddr << ") - network module closed" << endl;
+    cout << "Node (address: " << myID.identifier << ") - network module closed" << endl;
 }
 
 void Network::enqueItem(QueueItem* item) {
@@ -172,7 +170,7 @@ void Network::enqueItem(QueueItem* item) {
 void* Network::recvThreadMain(void* ptr) {
 
     Network* instance = (Network*)ptr;
-    cout << "Node (address: " << instance->myAddr << ") - recv thread started" << endl;
+    cout << "Node (address: " << instance->myID.identifier << ") - recv thread started" << endl;
 
     while(true) {
         try {
@@ -200,7 +198,7 @@ void* Network::sendThreadMain(void* ptr) {
     bool queueIsEmpty;
     QueueItem* current;
 
-    cout << "Node (address: " << instance->myAddr << ") - send thread started" << endl;
+    cout << "Node (address: " << instance->myID.identifier << ") - send thread started" << endl;
 
     while(instance->sendThreadRunning) {
         usleep(100000);

@@ -17,8 +17,6 @@ class Network {
     CORBA::ORB_var orb;
     PortableServer::POA_var poa;
 
-    std::string myAddr;
-    std::string myAlgo;
     disco_plat::nodeID myID;
 
     std::deque<QueueItem*> sendQueue;

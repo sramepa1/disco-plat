@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     int port = DEFAULT_PORT;
     const char* address = NULL;
     const char* name = "ham0";
-    const char* algoritm = NULL;
+    const char* algoritm = "";
     const char* file = NULL;
 
     int character;
@@ -74,15 +74,20 @@ int main(int argc, char** argv) {
     cout << "Initializing network module with port " << port << ", name '" << name << "' and address '"
          << (address == NULL ? "NULL" : address) << "'" << endl;
 
-    // create connection
-    networkModule = new Network(port, name, algoritm);
-    networkModule->start(address);
 
-    // some useful work... :)
-    sleep(60);
+    try {
+        // create connection
+        networkModule = new Network(port, name, algoritm);
+        networkModule->start(address);
 
-    // network cleanup
-    delete networkModule;
+        // some useful work... :)
+        sleep(60);
+
+        // network cleanup
+        delete networkModule;
+    } catch(const char* str) {
+        cerr << "Caught string exception: " << str << endl;
+    }
 
     return 0;
 }

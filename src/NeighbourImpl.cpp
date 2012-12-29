@@ -15,7 +15,7 @@ using namespace disco_plat;
 void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
     cout << "Recieved message ConnectAsLeftNode from left neighbour" << endl;
 
-    if(strcmp(newNodeID.algorithm, networkModule->getMyID().algorithm) != 0) {
+    if(strlen(newNodeID.algorithm) !=0 && strcmp(newNodeID.algorithm, networkModule->getMyID().algorithm) != 0) {
         throw ConnectionError("Used algorithms does not match!");
     }
 
@@ -89,9 +89,5 @@ void RightNeighbourImpl::Boomerang(const blob& data) {
     // this cannot happen - don't know what to do
     throw "From right nieghbour came boomerang message. This is forbidden since boomerang goes in right-left direction only!";
 }
-
-
-
-
 
 
