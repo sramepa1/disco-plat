@@ -13,7 +13,7 @@ struct nodeID {
 };
 
 
-enum type { ping, workRequest, workAssignment, result, terminationToken, terminate };
+enum type { PING, WORK_REQUEST, WORK_ASSIGNMET, RESULT, TERMINATION_TOKEN, TERMINATE };
 
 
 struct blob {

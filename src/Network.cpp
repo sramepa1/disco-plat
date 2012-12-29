@@ -26,7 +26,7 @@ using namespace disco_plat;
     } \
     var = type::_narrow(tempObj);
 
-Network::Network(int port, const char* networkInterface) : sendThreadRunning(true) {
+Network::Network(int port, const char* networkInterface, const char* algorithm) : sendThreadRunning(true) {
 
     pthread_mutex_init(&bindMutex, NULL);
     pthread_mutex_init(&queueMutex, NULL);
@@ -62,6 +62,10 @@ Network::Network(int port, const char* networkInterface) : sendThreadRunning(tru
     stringstream thisAddrStr;
     thisAddrStr << "inet:" << myIPAddr << ":" << port;
     myAddr = thisAddrStr.str();
+    myAlgo = string(algorithm);
+
+    myID.algorithm = algorithm;
+    myID.identifier = myAddr.c_str();
 
     cout << "Node (address: " << myAddr << ") - initializing" << endl;
 

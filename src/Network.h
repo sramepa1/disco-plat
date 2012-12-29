@@ -18,6 +18,8 @@ class Network {
     PortableServer::POA_var poa;
 
     std::string myAddr;
+    std::string myAlgo;
+    disco_plat::nodeID myID;
 
     std::deque<QueueItem*> sendQueue;
     pthread_mutex_t queueMutex;
@@ -41,7 +43,7 @@ class Network {
     LeftNeighbourIface* leftIface;
 
 public:
-    Network(int port, const char* networkInterface);
+    Network(int port, const char* networkInterface, const char* algorithm);
     ~Network();
 
     void start(const char *remoteAddr);
@@ -50,6 +52,7 @@ public:
     RightNeighbourIface& getMyRightInterface();
     LeftNeighbourIface& getMyLeftInterface();
 
+    const disco_plat::nodeID& getMyID() { return myID; }
     const disco_plat::nodeID& getRightID() { return rightID; }
     const disco_plat::nodeID& getLeftID() { return leftID; }
 

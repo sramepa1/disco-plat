@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
     int port = DEFAULT_PORT;
     const char* address = NULL;
     const char* name = "ham0";
+    const char* algoritm = NULL;
     const char* file = NULL;
 
     int character;
@@ -74,7 +75,7 @@ int main(int argc, char** argv) {
          << (address == NULL ? "NULL" : address) << "'" << endl;
 
     // create connection
-    networkModule = new Network(port, name);
+    networkModule = new Network(port, name, algoritm);
     networkModule->start(address);
 
     // some useful work... :)

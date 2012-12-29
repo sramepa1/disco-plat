@@ -1,8 +1,16 @@
 #ifndef SYNCHRONIZATION_H
 #define SYNCHRONIZATION_H
 
+#include "globals.h"
+#include "NeighbourIface.h"
+
 class Synchronization
 {
+
+    LeftNeighbourIface* leftNb;
+    RightNeighbourIface* rightNb;
+
+    unsigned int computationID;
 
     // DISABLED
     Synchronization(const Synchronization&) {}
@@ -21,7 +29,7 @@ public:
      * @param nodes array of nodes in dominant set
      * @param nodeCount count of nodes in domninant set
      */
-    void newResult(const char* data, int dataLenght) {}
+    void newResult(const char* data, int dataLenght);
 
     /**
      * Blocks until new work arrives or computation terminates.
