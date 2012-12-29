@@ -24,7 +24,9 @@ class Network {
 
     pthread_t recvThread;
     pthread_t sendThread;
+
     bool sendThreadRunning;
+    pthread_mutex_t bindMutex;
 
     static void* recvThreadMain(void* ptr);
     static void* sendThreadMain(void* ptr);
@@ -39,9 +41,10 @@ class Network {
     LeftNeighbourIface* leftIface;
 
 public:
-    Network(int port, const char* networkInterface, const char* remoteAddr);
+    Network(int port, const char* networkInterface);
     ~Network();
 
+    void start(const char *remoteAddr);
     void enqueItem(QueueItem* item);
 
     RightNeighbourIface& getMyRightInterface();

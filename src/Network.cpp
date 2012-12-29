@@ -26,8 +26,9 @@ using namespace disco_plat;
     } \
     var = type::_narrow(tempObj);
 
-Network::Network(int port, const char* networkInterface, const char* remoteAddr) : sendThreadRunning(true) {
+Network::Network(int port, const char* networkInterface) : sendThreadRunning(true) {
 
+    pthread_mutex_init(&bindMutex, NULL);
     pthread_mutex_init(&queueMutex, NULL);
     rightIface = new RightNeighbourIface(this);
     leftIface = new LeftNeighbourIface(this);
@@ -90,48 +91,71 @@ Network::Network(int port, const char* networkInterface, const char* remoteAddr)
     poa->activate_object(leftObject);
     leftObject->_this();
 
-    // starting recv thread
-    if(pthread_create(&recvThread, NULL, &Network::recvThreadMain, this)) {
-        throw "Cannot create recieving thread!!!";
-    }
-
-    CORBA::Object_var tempObj;
-
-    if(remoteAddr == NULL) {
-        // first node case
-        rightID.identifier = myAddr.c_str();
-        BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", myAddr.c_str(), rightRemoteObject, LeftNeighbour);
-
-        leftID.identifier = myAddr.c_str();
-        BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", myAddr.c_str(), leftRemoteObject, RightNeighbour);
-
-    } else {
-        // non-first node case
-        rightID.identifier = remoteAddr;
-        BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", remoteAddr, rightRemoteObject, LeftNeighbour);
-
-        nodeID myID;
-        myID.identifier = myAddr.c_str();
-        nodeID* leftPtr = &leftID;
-        rightRemoteObject->ConnectAsLeftNode(myID, leftPtr);
-        leftID = *leftPtr;
-        BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (char*)leftID.identifier, leftRemoteObject, RightNeighbour);
-
-        getMyLeftInterface().UpdateRightNode(myID);
-    }
-
-    // starting send thread
-    if(pthread_create(&sendThread, NULL, &Network::sendThreadMain, this)) {
-        throw "Cannot create sending thread!!!";
-    }
+    poa->the_POAManager()->activate();
 
     cout << "Node (address: " << myAddr << ") - initialized" << endl;
 }
 
+void Network::start(const char* remoteAddr) {
+
+    pthread_mutex_lock(&bindMutex);
+    try {
+        // starting recv thread
+        if(pthread_create(&recvThread, NULL, &Network::recvThreadMain, this)) {
+            throw "Cannot create recieving thread!!!";
+        }
+
+        CORBA::Object_var tempObj;
+
+        if(remoteAddr == NULL) {
+            // first node case
+            rightID.identifier = myAddr.c_str();
+            BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", myAddr.c_str(), rightRemoteObject, LeftNeighbour);
+
+            leftID.identifier = myAddr.c_str();
+            BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", myAddr.c_str(), leftRemoteObject, RightNeighbour);
+
+        } else {
+            // non-first node case
+            rightID.identifier = remoteAddr;
+            BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", remoteAddr, rightRemoteObject, LeftNeighbour);
+
+            nodeID myID;
+            myID.identifier = myAddr.c_str();
+            nodeID* leftPtr = &leftID;
+            rightRemoteObject->ConnectAsLeftNode(myID, leftPtr);
+            leftID = *leftPtr;
+            BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (char*)leftID.identifier, leftRemoteObject,
+                            RightNeighbour);
+
+            getMyLeftInterface().UpdateRightNode(myID);
+        }
+
+        // starting send thread
+        if(pthread_create(&sendThread, NULL, &Network::sendThreadMain, this)) {
+            throw "Cannot create sending thread!!!";
+        }
+
+    } catch(...) {
+        pthread_mutex_unlock(&bindMutex);
+        throw;
+    }
+    pthread_mutex_unlock(&bindMutex);
+}
+
 Network::~Network() {
-    // TODO: join threads
+    cout << "Node (address: " << myAddr << ") - closing network module" << endl;
+
     sendThreadRunning = false;
     orb->shutdown(TRUE);
+
+    pthread_join(sendThread, NULL);
+    pthread_join(recvThread, NULL);
+
+    pthread_mutex_destroy(&queueMutex);
+    pthread_mutex_destroy(&bindMutex);
+
+    cout << "Node (address: " << myAddr << ") - network module closed" << endl;
 }
 
 void Network::enqueItem(QueueItem* item) {
@@ -145,7 +169,6 @@ void* Network::recvThreadMain(void* ptr) {
 
     Network* instance = (Network*)ptr;
     cout << "Node (address: " << instance->myAddr << ") - recv thread started" << endl;
-    instance->poa->the_POAManager()->activate();
 
     while(true) {
         try {
@@ -189,6 +212,7 @@ void* Network::sendThreadMain(void* ptr) {
             instance->sendQueue.pop_front();
             pthread_mutex_unlock(&instance->queueMutex);
 
+            pthread_mutex_lock(&instance->bindMutex);
             try {
                 current->sendMe(make_pair(instance->rightRemoteObject, instance->leftRemoteObject));
             } catch(CORBA::SystemException& ex) {       // TODO: better exception handling
@@ -202,6 +226,7 @@ void* Network::sendThreadMain(void* ptr) {
             } catch(...) {
                 cerr << "Caught unknown exception." << endl;
             }
+            pthread_mutex_unlock(&instance->bindMutex);
 
             delete current;
 
@@ -222,15 +247,30 @@ LeftNeighbourIface& Network::getMyLeftInterface() {
     return *leftIface;
 }
 
-// TODO: mutex and try-catch - it is needed?
 void Network::changeRightNeighbour(const nodeID& newID) {
-    CORBA::Object_var tempObj;
-    rightID = newID;
-    BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", (const char*)newID.identifier, rightRemoteObject, LeftNeighbour);
+    pthread_mutex_lock(&bindMutex);
+    try {
+        CORBA::Object_var tempObj;
+        rightID = newID;
+        BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", (const char*)newID.identifier, rightRemoteObject,
+                        LeftNeighbour);
+    } catch(...) {
+        pthread_mutex_unlock(&bindMutex);
+        throw;
+    }
+    pthread_mutex_unlock(&bindMutex);
 }
 
 void Network::changeLeftNeighbour(const nodeID& newID) {
-    CORBA::Object_var tempObj;
-    leftID = newID;
-    BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)newID.identifier, leftRemoteObject, RightNeighbour);
+    pthread_mutex_lock(&bindMutex);
+    try {
+        CORBA::Object_var tempObj;
+        leftID = newID;
+        BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)newID.identifier, leftRemoteObject,
+                        RightNeighbour);
+    } catch(...) {
+        pthread_mutex_unlock(&bindMutex);
+        throw;
+    }
+    pthread_mutex_unlock(&bindMutex);
 }

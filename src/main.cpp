@@ -74,7 +74,8 @@ int main(int argc, char** argv) {
          << (address == NULL ? "NULL" : address) << "'" << endl;
 
     // create connection
-    networkModule = new Network(port, name, address);
+    networkModule = new Network(port, name);
+    networkModule->start(address);
 
     // some useful work... :)
     sleep(60);

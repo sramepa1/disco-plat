@@ -11,7 +11,6 @@ class LeftNeighbourIface {
     friend class Network;
 
 public:
-    //::disco_plat::nodeID* ConnectAsLeftNode(const ::disco_plat::nodeID& newNodeID) {}
     void NeigbourDied(const ::disco_plat::nodeID& reportingNodeID) {
         parent->enqueItem(new Left_NeigbourDied(reportingNodeID));
     }
@@ -33,7 +32,6 @@ class RightNeighbourIface {
     friend class Network;
 
 public:
-    //::disco_plat::nodeID* ConnectAsLeftNode(const ::disco_plat::nodeID& newNodeID) {}
     void NeigbourDied(const ::disco_plat::nodeID& reportingNodeID) {
         parent->enqueItem(new Right_NeigbourDied(reportingNodeID));
     }
