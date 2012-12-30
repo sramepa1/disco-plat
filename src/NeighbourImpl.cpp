@@ -16,12 +16,8 @@ using namespace disco_plat;
 void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
     cout << "Recieved message ConnectAsLeftNode from left neighbour" << endl;
 
-    if(strlen(newNodeID.algorithm) == 0) {
-        networkModule->setAlgo(newNodeID.algorithm);
-    } else {
-        if(strcmp(newNodeID.algorithm, networkModule->getMyID().algorithm) != 0) {
-            throw ConnectionError("Used algorithms does not match!");
-        }
+    if(strlen(newNodeID.algorithm) !=0 && strcmp(newNodeID.algorithm, networkModule->getMyID().algorithm) != 0) {
+        throw ConnectionError("Used algorithms does not match!");
     }
 
     oldLeftNodeID = new nodeID(networkModule->getLeftID());
@@ -49,10 +45,12 @@ void LeftNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
 void LeftNeighbourImpl::Boomerang(const blob& data) {
     cout << "Recieved message Boomerang from left neighbour" << endl;
 
+    bool originMe = false;
     bool sendFurther = true;
 
     if(data.sourceNode.identifier == networkModule->getMyID().identifier) {
         sendFurther = false;
+        originMe = true;
     }
 
     switch(data.messageType) {
@@ -68,7 +66,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             break;
 
         case RESULT :
-            synchModule->informResult(data.data.get_buffer(), data.dataLength);
+            synchModule->informResult(data.data.get_buffer(), data.data.length());
             break;
 
         case TERMINATION_TOKEN :
@@ -78,6 +76,25 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         case TERMINATE :
             synchModule->informTerminate();
             break;
+
+        case ID_SEARCH :
+
+            if(originMe) {
+                //TODO set info to storage
+            } else {
+                //TODO change to my ID if greater
+            }
+
+            break;
+
+    case INSTANCE_ANNOUNCEMENT :
+
+        break;
+
+    case INSTANCE_REQUEST :
+
+        break;
+
     }
 
 

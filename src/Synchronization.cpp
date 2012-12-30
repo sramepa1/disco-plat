@@ -26,7 +26,6 @@ void Synchronization::newResult(const char* data, int dataLenght) {
     }
 
     message.data = blobData;
-    message.dataLength = dataLenght;
 
     rightNb->Boomerang(message);
 }

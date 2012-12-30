@@ -3,7 +3,6 @@
 
 #include "globals.h"
 #include "NeighbourIface.h"
-#include "Synchronization.h"
 
 class Synchronization
 {
