@@ -47,14 +47,14 @@ public:
     }
 };
 
-class Left_Boomerang : public QueueItem {
-    const ::disco_plat::blob data;
-public:
-    Left_Boomerang(const ::disco_plat::blob& data) : data(data) {}
-    void sendMe(NeighbourPair neighbours) {
-        neighbours.second->Boomerang(data);
-    }
-};
+//class Left_Boomerang : public QueueItem {
+//    const ::disco_plat::blob data;
+//public:
+//    Left_Boomerang(const ::disco_plat::blob& data) : data(data) {}
+//    void sendMe(NeighbourPair neighbours) {
+//        neighbours.second->Boomerang(data);
+//    }
+//};
 
 
 /*****************************************************************/

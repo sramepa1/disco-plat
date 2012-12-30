@@ -21,11 +21,12 @@ class RightNeighbourImpl : virtual public POA_disco_plat::RightNeighbour
 
 public:
 
-    virtual void ConnectAsLeftNode(const ::disco_plat::nodeID& newNodeID, ::disco_plat::nodeID_out oldLeftNodeID);
+    //virtual void ConnectAsLeftNode(const ::disco_plat::nodeID& newNodeID, ::disco_plat::nodeID_out oldLeftNodeID);
+    virtual void RequestComputationalData(const ::disco_plat::nodeID& destinationID);
     virtual void NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID);
     virtual void UpdateRightNode(const ::disco_plat::nodeID& newNodeID);
     virtual void UpdateLeftNode(const ::disco_plat::nodeID& newNodeID);
-    virtual void Boomerang(const ::disco_plat::blob& data);
+    //virtual void Boomerang(const ::disco_plat::blob& data);
 
 };
 

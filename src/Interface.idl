@@ -54,11 +54,12 @@ interface LeftNeighbour {
 
 interface RightNeighbour {
 
-    void ConnectAsLeftNode(in nodeID newNodeID, out nodeID oldLeftNodeID);
+    // Requests for initial data which describes the specific instance of problem (e.g. weights, costs of all items and
+    // capacity in knapsack problem).
+    void RequestComputationalData(in nodeID destinationID);
     void NeigbourDied(in nodeID reportingNodeID, in nodeID deadNodeID);
     void UpdateRightNode(in nodeID newNodeID);
     void UpdateLeftNode(in nodeID newNodeID);
-    void Boomerang(in blob data);
 
 };
 

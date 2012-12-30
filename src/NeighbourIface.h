@@ -20,9 +20,9 @@ public:
     void UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) {
         parent->enqueItem(new Left_UpdateLeftNode(newNodeID));
     }
-    void Boomerang(const ::disco_plat::blob& data) {
-        parent->enqueItem(new Left_Boomerang(data));
-    }
+//    void Boomerang(const ::disco_plat::blob& data) {
+//        parent->enqueItem(new Left_Boomerang(data));
+//    }
 };
 
 class RightNeighbourIface {

@@ -124,12 +124,15 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 /*****************************************************************/
 //  RightNeighbour
 
-void RightNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
+//void RightNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
 
-    cout << "Recieved message ConnectAsLeftNode from right neighbour" << endl;
+//    cout << "Recieved message ConnectAsLeftNode from right neighbour" << endl;
 
-    // this cannot happen - don't know what to do
-    throw "From right nieghbour came connecting request. This is not supported yet!";
+//    // this cannot happen - don't know what to do
+//    throw "From right nieghbour came connecting request. This is not supported yet!";
+//}
+
+void RightNeighbourImpl::RequestComputationalData(const nodeID& destinationID) {
 }
 
 
@@ -150,12 +153,10 @@ void RightNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
 }
 
 
-void RightNeighbourImpl::Boomerang(const blob& data) {
+//void RightNeighbourImpl::Boomerang(const blob& data) {
 
-    cout << "Recieved message Boomerang from right neighbour" << endl;
+//    cout << "Recieved message Boomerang from right neighbour" << endl;
 
-    // this cannot happen - don't know what to do
-    throw "From right nieghbour came boomerang message. This is forbidden since boomerang goes in right-left direction only!";
-}
-
-
+//    // this cannot happen - don't know what to do
+//    throw "From right nieghbour came boomerang message. This is forbidden since boomerang goes in right-left direction only!";
+//}
