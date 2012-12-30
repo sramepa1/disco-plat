@@ -12,10 +12,6 @@
 class LeftNeighbourIface;
 class RightNeighbourIface;
 
-enum NodeState {
-    OK, DEAD, MAYBE_DEAD
-};
-
 class Network {
 
     CORBA::ORB_var orb;
@@ -39,12 +35,10 @@ class Network {
     disco_plat::nodeID rightID;
     disco_plat::LeftNeighbour_var rightRemoteObject;
     RightNeighbourIface* rightIface;
-    NodeState rightNeighbourState;
 
     disco_plat::nodeID leftID;
     disco_plat::RightNeighbour_var leftRemoteObject;
     LeftNeighbourIface* leftIface;
-    NodeState leftNeighbourState;
 
     void createSingleNodeNetwork();
     void createSingleNodeNetworkWithMutex();
@@ -52,7 +46,6 @@ class Network {
     void reportDeadLeftNode();
     void reportDeadRightNode();
 
-    // TODO: set initial value
     disco_plat::nodeID reportNodeID;
     bool networkBroken;
 
@@ -72,11 +65,6 @@ public:
 
     void changeRightNeighbour(const disco_plat::nodeID& newID);
     void changeLeftNeighbour(const disco_plat::nodeID& newID);
-
-    NodeState getRightNeighbourState() { return rightNeighbourState; }
-    NodeState getLeftNeighbourState() { return leftNeighbourState; }
-    void setRightNeighbourState(NodeState newState) { rightNeighbourState = newState; }
-    void setLeftNeighbourState(NodeState newState) { leftNeighbourState = newState; }
 
     void setReportNodeID(disco_plat::nodeID newID) { reportNodeID = newID; }
     void repairNetwork() { networkBroken = false; }     // It's so simple... :-)

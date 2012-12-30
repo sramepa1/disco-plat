@@ -27,7 +27,7 @@ using namespace disco_plat;
     var = type::_narrow(tempObj);
 
 Network::Network(int port, const char* networkInterface, const char* algorithm) : sendThreadRunning(true),
-    rightNeighbourState(OK), leftNeighbourState(OK), networkBroken(false) {
+    networkBroken(false) {
 
     pthread_mutex_init(&bindMutex, NULL);
     pthread_mutex_init(&queueMutex, NULL);
@@ -66,6 +66,7 @@ Network::Network(int port, const char* networkInterface, const char* algorithm) 
     myID.algorithm = algorithm;
 
     cout << "Node (address: " << myID.identifier << ") - initializing" << endl;
+    reportNodeID = myID;
 
     int argcORB = 3;
     char** argvORB = new char*[argcORB];
@@ -127,7 +128,6 @@ void Network::start(const char* remoteAddr) {
                             RightNeighbour);
 
             leftRemoteObject->BuildNetAndRequestData(myID);
-            //getMyLeftInterface().UpdateRightNode(myID);
         }
 
         // starting send thread
@@ -234,7 +234,7 @@ void* Network::sendThreadMain(void* ptr) {
 
             pthread_mutex_lock(&instance->bindMutex);
             try {
-                current->sendMeAndThrow(make_pair(instance->rightRemoteObject, instance->leftRemoteObject));
+                current->sendMe(make_pair(instance->rightRemoteObject, instance->leftRemoteObject));
             } catch(LeftNeighbourCommFailure&) {
                 cerr << "Left neighbour disconnected" << endl;
                 pthread_mutex_unlock(&instance->bindMutex);
@@ -321,32 +321,16 @@ void Network::reportDeadLeftNode() {
     }
     pthread_mutex_unlock(&bindMutex);
 
-
-//    if(leftNeighbourState == OK) {
-//        leftNeighbourState = DEAD;
-//        // TODO: check if I gave work to dead node
-//        try {
-//            getMyRightInterface().NeigbourDied(getMyID(), getLeftID());
-//        } catch(RightNeighbourCommFailure&) {
-//            createSingleNodeNetworkWithMutex();
-//        }
-
-//        rightNeighbourState = MAYBE_DEAD;
-//    }
 }
 
 void Network::reportDeadRightNode() {
     if(!networkBroken) {
-
-        rightNeighbourState = DEAD;
         // TODO: check if I gave work to dead node
         try {
-            leftRemoteObject->NeighbourDied(getMyID(), getRightID());
+            leftRemoteObject->NodeDied(getMyID(), getRightID());
             networkBroken = true;
         } catch(CORBA::COMM_FAILURE&) {
             createSingleNodeNetworkWithMutex();
         }
-
-        leftNeighbourState = MAYBE_DEAD;
     }
 }
