@@ -10,25 +10,75 @@ Synchronization::Synchronization(Computation* comp) : comp(comp)
     leftNb = &networkModule->getMyLeftInterface();
     rightNb = &networkModule->getMyRightInterface();
 
+    pthread_mutex_init(&stateMutex, NULL);
 }
 
-void Synchronization::newResult(const char* data, int dataLenght) {
+Synchronization::~Synchronization()
+{
+    pthread_mutex_destroy(&stateMutex);
+}
 
-    blob message;
-    message.sourceNode = networkModule->getMyID();
-    message.computationID = computationID;
-    message.messageType = RESULT;
 
-    blob::_data_seq blobData(dataLenght);
+void Synchronization::synchronize() {
 
-    for(int i = 0; i < dataLenght; ++i) {
-        blobData[i] = data[i];
+    pthread_mutex_lock(&stateMutex);
+    if(TERMINATING) {
+        // TODO manualy terminated
     }
 
-    message.data = blobData;
+    state = SYNCHRONIZING;
+    pthread_mutex_unlock(&stateMutex);
 
-    rightNb->Boomerang(message);
+
+
+
+    pthread_mutex_lock(&stateMutex);
+    if(TERMINATING) {
+        // TODO manualy terminated
+    }
+
+    state = WORKING;
+    pthread_mutex_unlock(&stateMutex);
+
 }
 
+
+bool Synchronization::isWorkAvailable() {
+
+    pthread_mutex_lock(&stateMutex);
+    if(TERMINATING) {
+        // TODO manualy terminated
+    }
+
+    state = IDLING;
+    pthread_mutex_unlock(&stateMutex);
+
+    return false;
+
+}
+
+void Synchronization::informAssignment(const char* data, int dataLenght, unsigned int computationID) {
+    pthread_mutex_lock(&stateMutex);
+    state = WORKING;
+    pthread_mutex_unlock(&stateMutex);
+
+
+
+}
+
+void Synchronization::informRequest(disco_plat::nodeID requesteeID) {
+
+}
+
+void Synchronization::informResult(const char* data, int dataLenght) {
+
+}
+
+
+void Synchronization::informTerminate() {
+    pthread_mutex_lock(&stateMutex);
+    state = TERMINATING;
+    pthread_mutex_unlock(&stateMutex);
+}
 
 

@@ -13,7 +13,7 @@ struct nodeID {
 };
 
 
-enum type { PING, WORK_REQUEST, WORK_ASSIGNMET, RESULT, TERMINATION_TOKEN, TERMINATE, ID_SEARCH, INSTANCE_ANNOUNCEMENT, INSTANCE_REQUEST };
+enum type { PING, WORK_REQUEST, WORK_ASSIGNMET, RESULT, TERMINATION_TOKEN, TERMINATE, ID_SEARCH, INSTANCE_ANNOUNCEMENT };
 
 
 struct blob {
@@ -23,8 +23,12 @@ struct blob {
 
     type messageType;
 
-    sequence<char> data;
+    sequence<char> charDataSequence;
+    sequence<long> longDataSequence;
+    string dataStringA;
+    string dataStringB;
     unsigned long slotA;
+    unsigned long slotB;
 
 };
 

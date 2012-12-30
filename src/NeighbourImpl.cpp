@@ -1,20 +1,15 @@
 #include "NeighbourImpl.h"
 #include "NeighbourIface.h"
 
-#include "Network.h"
-#include "Synchronization.h"
 #include "globals.h"
+#include "Network.h"
+#include "Repository.h"
+#include "Synchronization.h"
 
 #include <iostream>
 
 using namespace std;
 using namespace disco_plat;
-
-
-#define CID_GLOBAL_ID 0
-
-#define SA_IA_PROPAGATE_FURTER 0
-#define SA_IA_DONT_PROPAGATE 1
 
 
 /*****************************************************************/
@@ -60,28 +55,44 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         originMe = true;
     }
 
+    ////////// Fully started
+    if(currentSyncModule != NULL) {
+
+        switch(data.messageType) {
+            case PING :
+                break;
+
+            case WORK_REQUEST :
+
+                break;
+
+            case WORK_ASSIGNMET :
+
+                break;
+
+            case RESULT :
+                //currentSyncModule->informResult(data.charDataSequence .get_buffer(), data.data.length());
+                break;
+
+            case TERMINATION_TOKEN :
+
+                break;
+
+            case TERMINATE :
+                currentSyncModule->informTerminate();
+                break;
+
+            default :
+                break;
+        }
+
+    }
+
+    ////////// Not yet fully started
     switch(data.messageType) {
-        case PING :
-            break;
-
-        case WORK_REQUEST :
-
-            break;
-
-        case WORK_ASSIGNMET :
-
-            break;
-
-        case RESULT :
-            currentSyncModule->informResult(data.data.get_buffer(), data.data.length());
-            break;
-
-        case TERMINATION_TOKEN :
-
-            break;
 
         case TERMINATE :
-            currentSyncModule->informTerminate();
+            if(currentSyncModule == NULL) exit(ERR_COMMAND_TERMINATE);
             break;
 
         case ID_SEARCH :
@@ -94,23 +105,20 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
             break;
 
-    case INSTANCE_ANNOUNCEMENT :
+        case INSTANCE_ANNOUNCEMENT :
 
-        if(SA_IA_PROPAGATE_FURTER) {
+            repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
 
-        }
+            if(data.slotA == BLOB_SA_IA_INIT_RESUME) {
+                repo->awakeInit();
+            }
 
-        break;
+            break;
 
-    case INSTANCE_REQUEST :
-
-        break;
-
+        default :
+            break;
     }
 
-
-
-    //TODO logiku pro zpracovani dat
 
     if(sendFurther) {
         RightNeighbourIface& right = networkModule->getMyRightInterface();

@@ -16,10 +16,6 @@ extern "C" {
 #include <getopt.h>
 }
 
-#define DEFAULT_PORT 1234
-#define ERR_INVALID_ARGUMENTS 1
-#define USAGE_INFO "usage: disco-plat port [address]"
-
 
 using namespace std;
 
@@ -36,9 +32,10 @@ static struct option long_options[] = {
 };
 
 void startNetwork(int port, const char* networkInterface, const char* algorithm, const char* address) {
+    repo = new Repository();
     networkModule = new Network(port, networkInterface, algorithm);
     networkModule->start(address);
-    repo = new Repository();
+    repo->init();
 }
 
 int main(int argc, char** argv) {
