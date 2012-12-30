@@ -2,6 +2,8 @@
 #include "Synchronization.h"
 #include "Algo.h"
 
+#include <unistd.h>
+
 using namespace std;
 
 Computation::Computation() : algo(NULL) {

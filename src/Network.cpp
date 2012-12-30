@@ -216,7 +216,7 @@ void* Network::sendThreadMain(void* ptr) {
 
             pthread_mutex_lock(&instance->bindMutex);
             try {
-                current->sendMe(make_pair(instance->rightRemoteObject, instance->leftRemoteObject));
+                current->sendMeAndThrow(make_pair(instance->rightRemoteObject, instance->leftRemoteObject));
             } catch(CORBA::SystemException& ex) {       // TODO: better exception handling
                 cerr << "Caught CORBA::SystemException." << endl;
                 ex._print(cerr);

@@ -7,17 +7,33 @@
 
 typedef std::pair<disco_plat::LeftNeighbour_var, disco_plat::RightNeighbour_var> NeighbourPair;
 
+class LeftNeighbourCommFailure {};
+class RightNeighbourCommFailure {};
+
 class QueueItem {
 public:
     virtual ~QueueItem() {}
     virtual void sendMe(NeighbourPair neighbours) = 0;
+    virtual void sendMeAndThrow(NeighbourPair neighbours) = 0;
 };
 
 
 /*****************************************************************/
 //  LeftNeighbour
 
-class Left_RequestComputationalData : public QueueItem {
+class Left_QueueItem : public QueueItem {
+public:
+    virtual ~Left_QueueItem() {}
+    void sendMeAndThrow(NeighbourPair neighbours) {
+        try {
+            sendMe(neighbours);
+        } catch (CORBA::COMM_FAILURE&) {
+            throw LeftNeighbourCommFailure();
+        }
+    }
+};
+
+class Left_RequestComputationalData : public Left_QueueItem {
     const ::disco_plat::nodeID& destinationID;
 public:
     Left_RequestComputationalData(const ::disco_plat::nodeID& destinationID) : destinationID(destinationID) {}
@@ -26,7 +42,7 @@ public:
     }
 };
 
-class Left_NeigbourDied : public QueueItem {
+class Left_NeigbourDied : public Left_QueueItem {
     const ::disco_plat::nodeID reportingNodeID;
     const ::disco_plat::nodeID& deadNodeID;
 public:
@@ -37,7 +53,7 @@ public:
     }
 };
 
-class Left_UpdateRightNode : public QueueItem {
+class Left_UpdateRightNode : public Left_QueueItem {
     const ::disco_plat::nodeID newNodeID;
 public:
     Left_UpdateRightNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
@@ -46,7 +62,7 @@ public:
     }
 };
 
-class Left_UpdateLeftNode : public QueueItem {
+class Left_UpdateLeftNode : public Left_QueueItem {
     const ::disco_plat::nodeID newNodeID;
 public:
     Left_UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
@@ -59,7 +75,19 @@ public:
 /*****************************************************************/
 //  RightNeighbour
 
-class Right_NeigbourDied : public QueueItem {
+class Right_QueueItem : public QueueItem {
+public:
+    virtual ~Right_QueueItem() {}
+    void sendMeAndThrow(NeighbourPair neighbours) {
+        try {
+            sendMe(neighbours);
+        } catch (CORBA::COMM_FAILURE&) {
+            throw RightNeighbourCommFailure();
+        }
+    }
+};
+
+class Right_NeigbourDied : public Right_QueueItem {
     const ::disco_plat::nodeID reportingNodeID;
     const ::disco_plat::nodeID& deadNodeID;
 public:
@@ -70,7 +98,7 @@ public:
     }
 };
 
-class Right_UpdateRightNode : public QueueItem {
+class Right_UpdateRightNode : public Right_QueueItem {
     const ::disco_plat::nodeID newNodeID;
 public:
     Right_UpdateRightNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
@@ -79,7 +107,7 @@ public:
     }
 };
 
-class Right_UpdateLeftNode : public QueueItem {
+class Right_UpdateLeftNode : public Right_QueueItem {
     const ::disco_plat::nodeID newNodeID;
 public:
     Right_UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
@@ -88,7 +116,7 @@ public:
     }
 };
 
-class Right_Boomerang : public QueueItem {
+class Right_Boomerang : public Right_QueueItem {
     const ::disco_plat::blob data;
 public:
     Right_Boomerang(const ::disco_plat::blob& data) : data(data) {}
