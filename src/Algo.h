@@ -27,7 +27,10 @@ private:
 };
 
 
-// Abstract base class for algorithms carrying a problem instance
+
+// Abstract base class for algorithms carrying a problem instance with them.
+// Extension point for supporting additional problems in disco-plat.
+
 class AlgoInstance
 {
 
@@ -37,9 +40,17 @@ public:
 
     virtual ~AlgoInstance() {}
 
+    // Evaluate current state. Return true if it should be expanded, false if backtracking should occur.
+    virtual bool evaluate() = 0;
+
+    // Go deeper, expand the current state by pushing a new one.
     virtual void expand() = 0;
 
+    // Print a text representation of the supplied configuration.
     virtual void printConfig(char* configuration, std::ostream& os) = 0;
+
+    // Returns true if first opt_t operand is better than the second one;
+    virtual bool isBetter(opt_t thisOptimum, opt_t thanThisOptimum) = 0;
 
 protected:
     Computation* comp;

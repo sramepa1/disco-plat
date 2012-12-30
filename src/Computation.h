@@ -2,9 +2,12 @@
 #define COMPUTATION_H
 
 #include <utility>
+#include <vector>
 
 class Synchronization;
 class AlgoInstance;
+
+class TrivialSolutionException {};
 
 
 typedef int opt_t;  // Integer-based optima are most common in NP-Hard problems. A little simplification won't hurt.
@@ -28,6 +31,9 @@ public:
      */
     void setAlgorithm(AlgoInstance* algo);
 
+    /**
+     * Sets current sync. Doesn't take ownership.
+     */
     void setSync(Synchronization* sync);
 
 
@@ -39,10 +45,22 @@ public:
     void start();
 
     /**
-     * Requests a stack slice to be sent when possible.
-     * Multiple calls increment a counter and are then replied to in bulk.
+     * Indicates if a new solution is available and should be extracted by getSolution()
      */
-    void requestWork();
+    bool hasNewSolution() { return hasNewSolution(); }
+
+    /**
+     * Extracts the current best known solution. Lowers the "hasNewSolution" flag if it was set.
+     */
+    std::pair<opt_t, std::vector<char> > getSolution();
+
+    /**
+     * Attempts to split avaliable work for requestCount other nodes.
+     * May return less slices than desired (or empty vector) if split is not possible.
+     *
+     * DATA TYPE OF VECTOR IS ONLY TEMPORARY FOR NOW!
+     */
+    std::vector<char*> splitWork(int requestCount);
 
     /**
      * Sets a new stack to work with.
@@ -53,19 +71,22 @@ public:
 
     /**
      * Sets a new best solution found by another process.
+     * If marked as trivial, immediate termination will occur.
      */
-    void setSolution(opt_t localOptimum, void* data);
+    void setSolution(opt_t optimum, std::vector<char> configuration, bool isTrivial);
 
     /**
-     * Request a controlled termination of this process on the first possible occasion
-     * because another process found a trivial solution.
+     * Returns true if first opt_t operand is better than the second one;
      */
-    void signalTrivialSolution(opt_t localOptimum, void* data);
+    bool isBetter(opt_t thisOptimum, opt_t thanThisOptimum);
 
 
     // -------------- Algorithm interface -------------------
 
-    void reinitialize(int instanceSize);
+    /**
+     * Flushes stacks and resets environment. Called when pairing an AlgoInstance with this Computation.
+     */
+    void reinitialize(int instanceSize, opt_t initialOptimum, char* initialConfiguration);
 
     opt_t getOptimum() { return optimum; }
 
@@ -100,11 +121,15 @@ private:
     opt_t optimum;
     char* optimalConfig;
 
+    bool newSolutionFound;  // flag to broadcast my solution upon next synchronization
+    bool trivialSolution;   // flag to use when a trivial solution is found elsewhere
 
-    bool trivialSolution; // flag to use when a trivial solution is found elsewhere
-
-    int workRequestCounter;
     int loopsToSync;    // Count of DFS iterations betwen synchronizations.
+
+    void DFS();
+    void synchronize();
+
+    void deallocateAll();
 
 };
 

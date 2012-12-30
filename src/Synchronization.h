@@ -37,7 +37,7 @@ public:
     /**
      * Blocks until new work arrives or computation terminates.
      */
-    void workDone() {}
+    bool isWorkAvailable() { return false; }
 
 
 

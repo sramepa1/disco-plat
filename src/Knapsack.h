@@ -12,15 +12,24 @@ public:
     Knapsack(std::istream& textDataStream, Computation* comp);
     static AlgoInstance* knapsackConstructor(std::istream& textDataStream, Computation* comp);
 
-    virtual ~Knapsack() {}
+    virtual ~Knapsack() { delete configBuffer; }
 
+    virtual bool evaluate();
     virtual void expand();
 
     virtual void printConfig(char* configuration, std::ostream& os);
+    virtual bool isBetter(opt_t thisOptimum, opt_t thanThisOptimum) { return thisOptimum > thanThisOptimum; }
 
 protected:
+    unsigned int instanceSize;
+
+    int capacity;
     std::vector<int> cost;
     std::vector<int> weight;
+    std::vector<int> maxPossibleCost;
+
+    char* configBuffer;
+
 };
 
 #endif // KNAPSACK_H

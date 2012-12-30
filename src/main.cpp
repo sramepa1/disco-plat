@@ -119,11 +119,11 @@ int main(int argc, char** argv) {
             }
 
             startNetwork(port, name, "", address);
-
             initialID = repo->getAnyValidID();
         }
 
         repo->start(initialID);
+        // TODO: attempt to start a different computation if available
 
         // cleanup
         delete networkModule;
