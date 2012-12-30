@@ -116,6 +116,9 @@ pair<AlgoInstance*, Computation*> Repository::getAlgoComp(unsigned int id) {
 
 void Repository::init() {
 
+    if(networkModule->getLeftID().identifier == networkModule->getMyID().identifier)
+        return;
+
     // TODO: Populate this->data from network!
     pthread_mutex_lock(&dataMutex);
     isInitSleeping = true;
