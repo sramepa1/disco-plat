@@ -24,15 +24,16 @@ Knapsack::Knapsack(istream& textDataStream, Computation* comp) : AlgoInstance(co
     memset(configBuffer, 0, instanceSize);
     comp->reinitialize(instanceSize, 0, configBuffer);
 
-    unsigned int sumc = 0;
-    unsigned int itemCost;
     for(unsigned int i = 0; i < instanceSize; i++) {
         textDataStream >> weight[i];
-        textDataStream >> itemCost;
-        cost[i] = itemCost;
-        sumc += itemCost;
-        maxPossibleCost[i] = sumc;
+        textDataStream >> cost[i];
         checkStream(textDataStream);
+    }
+
+    unsigned int sumc = 0;
+    for(int i = instanceSize - 1; i >= 0; i--) {
+        sumc += cost[i];
+        maxPossibleCost[i] = sumc;
     }
 }
 
@@ -58,6 +59,7 @@ bool Knapsack::evaluate() {
     }
 
 	if(sumw > capacity) {
+		// Overloaded knapsack. Cut branch.
 		return false;
 	}
 
@@ -65,18 +67,49 @@ bool Knapsack::evaluate() {
 		comp->newSolution(sumc, configuration);
 	}
 
-/*
-	for(long i = depth; i < instsize; i++) {
-		if(cost + maxpossiblecost[i] < bestcost)
-			return;	// BB2
-		knapdfs(bitvec | (1 << i), depth+i+1);
+	for(int i = interval.first; i < interval.second; i++) {
+
+		// all previous ones occupied and from this point,
+		// it can't get any better. Cut branch.
+		if(sumc + maxPossibleCost[i] < comp->getOptimum()) {
+			return false;
+		}
+
+		// there is at least one unoccupied item slot.
+		// branching is possible
+		if(!configuration[i]) {
+			return true;
+		}
 	}
-*/
-	return false; // TODO: remove
+
+	// all interval-specified options exhausted. Cut branch.
+	return false;
 }
 
 void Knapsack::expand() {
-	// TODO:
+	pair<int, int> interval;
+	char* configuration;
+	comp->peekState(configuration, interval);
+	memcpy(configBuffer, configuration, instanceSize);
+
+	for(int i = interval.first; i < interval.second; i++) {
+
+		if(!configBuffer[i]) {
+
+			// nudge left bound to start at a different item next time when backtracking to current state
+			interval.first += 1;
+			comp->setInterval(interval);
+
+			// create a new state to push, with a matching "one to the right -> end" interval
+			interval.first = i + 1;
+			interval.second = instanceSize;
+			configBuffer[i] = 1;
+			comp->pushState(configBuffer, interval);
+			return;
+		}
+	}
+
+	throw "Expansion attempted in a non-expandable state! This must be an algorithm bug or memory corruption!";
 }
 
 void Knapsack::printConfig(char* configuration, ostream& os) {

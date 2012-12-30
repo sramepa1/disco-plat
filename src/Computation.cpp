@@ -57,6 +57,9 @@ void Computation::DFS() {
 
         while(true) {
 
+//            cout << "Trying configuration => ";
+//            algo->printConfig(configStack + stackTop*instanceSize, cout);
+
             if(algo->evaluate()) {
                 algo->expand();
 
@@ -77,9 +80,6 @@ void Computation::DFS() {
     } catch(TrivialSolutionException) {
         cout << "Remote trivial solution detected" << endl;
     }
-
-
-    sleep(5); // TODO: implement real DFS
 }
 
 void Computation::synchronize() {
@@ -134,6 +134,7 @@ void Computation::reinitialize(int instanceSize, opt_t initialOptimum, char* ini
 
     memcpy(optimalConfig, initialConfiguration, instanceSize);
     memcpy(configStack, initialConfiguration, instanceSize);
+    intervalStack[0] = pair<int, int>(0, instanceSize);
 }
 
 void Computation::newSolution(opt_t optimum, char* configuration) {
@@ -143,9 +144,11 @@ void Computation::newSolution(opt_t optimum, char* configuration) {
 }
 
 /**
- * Changes the "next" node to examine at the top of the stack
+ * Changes the "next" node to examine at the top of the stack upon backtrack to current state again.
  */
-void Computation::setInterval(std::pair<int,int> interval) { /*TODO: implement*/}
+void Computation::setInterval(std::pair<int,int> interval) {
+    intervalStack[stackTop] = interval;
+}
 
 void Computation::peekState(char* & configuration, std::pair<int,int> & interval) {
     configuration = configStack + stackTop * instanceSize;
