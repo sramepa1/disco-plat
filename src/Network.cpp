@@ -194,16 +194,16 @@ void* Network::recvThreadMain(void* ptr) {
         try {
             instance->orb->run();
             break;
-        } catch(CORBA::SystemException& ex) {       // TODO: better exception handling
-            cerr << "Caught CORBA::SystemException." << endl;
+        } catch(CORBA::SystemException& ex) {
+            cerr << "recv thread - Caught CORBA::SystemException." << endl;
             ex._print(cerr);
             cerr << endl;
         } catch(CORBA::Exception& ex) {
-            cerr << "Caught CORBA::Exception." << endl;
+            cerr << "recv thread - Caught CORBA::Exception." << endl;
             ex._print(cerr);
             cerr << endl;
         } catch(...) {
-            cerr << "Caught unknown exception." << endl;
+            cerr << "recv thread - Caught unknown exception." << endl;
         }
     }
     return NULL;
@@ -236,25 +236,28 @@ void* Network::sendThreadMain(void* ptr) {
             try {
                 current->sendMe(make_pair(instance->rightRemoteObject, instance->leftRemoteObject));
             } catch(LeftNeighbourCommFailure&) {
-                cerr << "Left neighbour disconnected" << endl;
+                cerr << "send thread - Left neighbour disconnected" << endl;
                 pthread_mutex_unlock(&instance->bindMutex);
                 instance->reportDeadLeftNode();
                 goto mutexJump;
             } catch(RightNeighbourCommFailure&) {
-                cerr << "Right neighbour disconnected" << endl;
+                cerr << "send thread - Right neighbour disconnected" << endl;
                 pthread_mutex_unlock(&instance->bindMutex);
                 instance->reportDeadRightNode();
                 goto mutexJump;
             } catch(CORBA::SystemException& ex) {
-                cerr << "Caught CORBA::SystemException." << endl;
+                cerr << "send thread - Caught CORBA::SystemException." << endl;
                 ex._print(cerr);
                 cerr << endl;
             } catch(CORBA::Exception& ex) {
-                cerr << "Caught CORBA::Exception." << endl;
+                cerr << "send thread - Caught CORBA::Exception." << endl;
                 ex._print(cerr);
                 cerr << endl;
+            } catch(const char* ex) {
+                cerr << "send thread - Caught string exception." << endl;
+                cerr << ex << endl;
             } catch(...) {
-                cerr << "Caught unknown exception." << endl;
+                cerr << "send thread - Caught unknown exception." << endl;
             }
             pthread_mutex_unlock(&instance->bindMutex);
 mutexJump:
