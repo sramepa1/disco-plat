@@ -3,6 +3,7 @@
 
 #include "globals.h"
 #include "NeighbourIface.h"
+#include "Synchronization.h"
 
 class Synchronization
 {
@@ -35,6 +36,13 @@ public:
      * Blocks until new work arrives or computation terminates.
      */
     void workDone() {}
+
+
+
+
+    void informRequest(disco_plat::nodeID requesteeID) {}
+    void informResult(const char* data, int dataLenght) {}
+    void informTerminate() {}
 
 };
 

@@ -2,6 +2,7 @@
 #include "NeighbourIface.h"
 
 #include "Network.h"
+#include "Synchronization.h"
 #include "globals.h"
 
 #include <iostream>
@@ -15,8 +16,12 @@ using namespace disco_plat;
 void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
     cout << "Recieved message ConnectAsLeftNode from left neighbour" << endl;
 
-    if(strlen(newNodeID.algorithm) !=0 && strcmp(newNodeID.algorithm, networkModule->getMyID().algorithm) != 0) {
-        throw ConnectionError("Used algorithms does not match!");
+    if(strlen(newNodeID.algorithm) == 0) {
+        networkModule->setAlgo(newNodeID.algorithm);
+    } else {
+        if(strcmp(newNodeID.algorithm, networkModule->getMyID().algorithm) != 0) {
+            throw ConnectionError("Used algorithms does not match!");
+        }
     }
 
     oldLeftNodeID = new nodeID(networkModule->getLeftID());
@@ -44,10 +49,45 @@ void LeftNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
 void LeftNeighbourImpl::Boomerang(const blob& data) {
     cout << "Recieved message Boomerang from left neighbour" << endl;
 
+    bool sendFurther = true;
+
+    if(data.sourceNode.identifier == networkModule->getMyID().identifier) {
+        sendFurther = false;
+    }
+
+    switch(data.messageType) {
+        case PING :
+            break;
+
+        case WORK_REQUEST :
+
+            break;
+
+        case WORK_ASSIGNMET :
+
+            break;
+
+        case RESULT :
+            synchModule->informResult(data.data.get_buffer(), data.dataLength);
+            break;
+
+        case TERMINATION_TOKEN :
+
+            break;
+
+        case TERMINATE :
+            synchModule->informTerminate();
+            break;
+    }
+
+
+
     //TODO logiku pro zpracovani dat
 
-    RightNeighbourIface& right = networkModule->getMyRightInterface();
-    right.Boomerang(data);
+    if(sendFurther) {
+        RightNeighbourIface& right = networkModule->getMyRightInterface();
+        right.Boomerang(data);
+    }
 
     cout << "Sent message Boomerang to right neighbour" << endl;
 }

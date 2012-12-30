@@ -50,6 +50,8 @@ public:
     RightNeighbourIface& getMyRightInterface();
     LeftNeighbourIface& getMyLeftInterface();
 
+    void setAlgo(const char* algo) { myID.algorithm = algo; }
+
     const disco_plat::nodeID& getMyID() { return myID; }
     const disco_plat::nodeID& getRightID() { return rightID; }
     const disco_plat::nodeID& getLeftID() { return leftID; }
