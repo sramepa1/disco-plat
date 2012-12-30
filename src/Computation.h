@@ -90,6 +90,11 @@ public:
 
     opt_t getOptimum() { return optimum; }
 
+    int getDepth() { return stackTop; }
+
+    char* accessConfigAtDepth(int depth) { return configStack + depth * instanceSize; }
+    std::pair<int, int>& accessIntervalAtDepth(int depth) { return intervalStack[depth]; }
+
     void newSolution(opt_t optimum, char* configuration);
 
     /**

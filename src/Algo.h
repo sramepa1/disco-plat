@@ -46,6 +46,9 @@ public:
     // Go deeper, expand the current state by pushing a new one.
     virtual void expand() = 0;
 
+    // Computation stacks were replaced, regenerate any possible caches
+    virtual void dataChanged() = 0;
+
     // Print a text representation of the supplied configuration.
     virtual void printConfig(char* configuration, std::ostream& os) = 0;
 

@@ -17,6 +17,8 @@ public:
     virtual bool evaluate();
     virtual void expand();
 
+    virtual void dataChanged();
+
     virtual void printConfig(char* configuration, std::ostream& os);
     virtual bool isBetter(opt_t thisOptimum, opt_t thanThisOptimum) { return thisOptimum > thanThisOptimum; }
 
@@ -30,6 +32,8 @@ protected:
 
     char* configBuffer;
 
+    std::vector<int> costCache;
+    std::vector<int> weightCache;
 };
 
 #endif // KNAPSACK_H

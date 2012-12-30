@@ -19,10 +19,13 @@ Knapsack::Knapsack(istream& textDataStream, Computation* comp) : AlgoInstance(co
     cost.resize(instanceSize);
     maxPossibleCost.resize(instanceSize);
     weight.resize(instanceSize);
+    costCache.resize(instanceSize);
+    weightCache.resize(instanceSize);
 
     configBuffer = new char[instanceSize];
     memset(configBuffer, 0, instanceSize);
     comp->reinitialize(instanceSize, 0, configBuffer);
+    costCache[0] = 0;
 
     for(unsigned int i = 0; i < instanceSize; i++) {
         textDataStream >> weight[i];
@@ -47,37 +50,23 @@ bool Knapsack::evaluate() {
 	char* configuration;
 	comp->peekState(configuration, interval);
 
+	int depth = comp->getDepth();
 
-	int sumw = 0;
-	int sumc = 0;
-
-    for(unsigned int i = 0; i < instanceSize; i++) {
-        if(configuration[i]) {
-            sumw += weight[i];
-            sumc += cost[i];
-        }
-    }
-
-	if(sumw > capacity) {
-		// Overloaded knapsack. Cut branch.
-		return false;
-	}
-
-	if((opt_t)sumc > comp->getOptimum()) {
-		comp->newSolution(sumc, configuration);
-	}
+	int thisCost = costCache[depth];
+	int thisWeight = weightCache[depth];
+	int optimum = (int)comp->getOptimum();
 
 	for(int i = interval.first; i < interval.second; i++) {
 
 		// all previous ones occupied and from this point,
 		// it can't get any better. Cut branch.
-		if(sumc + maxPossibleCost[i] < comp->getOptimum()) {
+		if(thisCost + maxPossibleCost[i] < optimum) {
 			return false;
 		}
 
 		// there is at least one unoccupied item slot.
 		// branching is possible
-		if(!configuration[i]) {
+		if(!configuration[i] && thisWeight + weight[i] <= capacity) {
 			return true;
 		}
 	}
@@ -92,9 +81,12 @@ void Knapsack::expand() {
 	comp->peekState(configuration, interval);
 	memcpy(configBuffer, configuration, instanceSize);
 
+	int depth = comp->getDepth();
+	int thisWeight = weightCache[depth];
+
 	for(int i = interval.first; i < interval.second; i++) {
 
-		if(!configBuffer[i]) {
+		if(!configBuffer[i] && thisWeight + weight[i] <= capacity) {
 
 			// nudge left bound to start at a different item next time when backtracking to current state
 			interval.first += 1;
@@ -105,11 +97,37 @@ void Knapsack::expand() {
 			interval.second = instanceSize;
 			configBuffer[i] = 1;
 			comp->pushState(configBuffer, interval);
+
+			// update caches and check for new solutions
+			int newCost = costCache[depth] + cost[i];
+			costCache[depth + 1] = newCost;
+			weightCache[depth + 1] = weightCache[depth] + weight[i];
+
+			if((opt_t)newCost > comp->getOptimum()) {
+				comp->newSolution(newCost, configBuffer);
+			}
+
 			return;
 		}
 	}
 
 	throw "Expansion attempted in a non-expandable state! This must be an algorithm bug or memory corruption!";
+}
+
+void Knapsack::dataChanged() {
+	for(int i = 0; i <= comp->getDepth(); i++) {
+		char* config = comp->accessConfigAtDepth(i);
+		int sumc;
+		int sumw;
+		for(unsigned int j = 0; j < instanceSize; j++) {
+			if(config[j]) {
+				sumc += cost[j];
+				sumw += weight[j];
+			}
+		}
+		costCache[i] = sumc;
+		weightCache[i] = sumw;
+	}
 }
 
 void Knapsack::printConfig(char* configuration, ostream& os) {

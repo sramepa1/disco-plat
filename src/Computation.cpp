@@ -109,7 +109,10 @@ vector<char*> Computation::splitWork(int requestCount) {
 }
 
 
-void Computation::setWork(const char* configStack, const std::pair<int,int> * intervalStack, int depth) { /*TODO: implement*/}
+void Computation::setWork(const char* configStack, const std::pair<int,int> * intervalStack, int depth) {
+    /*TODO: implement*/
+    algo->dataChanged();
+}
 
 
 void Computation::setSolution(opt_t optimum, vector<char> configuration, bool isTrivial) {
