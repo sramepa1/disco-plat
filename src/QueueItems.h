@@ -17,13 +17,21 @@ public:
 /*****************************************************************/
 //  LeftNeighbour
 
+class Left_RequestComputationalData : public QueueItem {
+    const ::disco_plat::nodeID& destinationID;
+public:
+    Left_RequestComputationalData(const ::disco_plat::nodeID& destinationID) : destinationID(destinationID) {}
+    void sendMe(NeighbourPair neighbours) {
+        neighbours.second->RequestComputationalData(destinationID);
+    }
+};
+
 class Left_NeigbourDied : public QueueItem {
     const ::disco_plat::nodeID reportingNodeID;
     const ::disco_plat::nodeID& deadNodeID;
 public:
     Left_NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID)
         : reportingNodeID(reportingNodeID), deadNodeID(deadNodeID) {}
-
     void sendMe(NeighbourPair neighbours) {
         neighbours.second->NeigbourDied(reportingNodeID, deadNodeID);
     }
@@ -46,15 +54,6 @@ public:
         neighbours.second->UpdateLeftNode(newNodeID);
     }
 };
-
-//class Left_Boomerang : public QueueItem {
-//    const ::disco_plat::blob data;
-//public:
-//    Left_Boomerang(const ::disco_plat::blob& data) : data(data) {}
-//    void sendMe(NeighbourPair neighbours) {
-//        neighbours.second->Boomerang(data);
-//    }
-//};
 
 
 /*****************************************************************/

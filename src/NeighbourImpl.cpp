@@ -124,15 +124,8 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 /*****************************************************************/
 //  RightNeighbour
 
-//void RightNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
-
-//    cout << "Recieved message ConnectAsLeftNode from right neighbour" << endl;
-
-//    // this cannot happen - don't know what to do
-//    throw "From right nieghbour came connecting request. This is not supported yet!";
-//}
-
 void RightNeighbourImpl::RequestComputationalData(const nodeID& destinationID) {
+    cout << "Recieved message RequestComputationalData from right neighbour" << endl;
 }
 
 
@@ -151,12 +144,3 @@ void RightNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
     cout << "Recieved message UpdateLeftNode from right neighbour" << endl;
     networkModule->changeLeftNeighbour(newNodeID);
 }
-
-
-//void RightNeighbourImpl::Boomerang(const blob& data) {
-
-//    cout << "Recieved message Boomerang from right neighbour" << endl;
-
-//    // this cannot happen - don't know what to do
-//    throw "From right nieghbour came boomerang message. This is forbidden since boomerang goes in right-left direction only!";
-//}

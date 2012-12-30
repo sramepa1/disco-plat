@@ -11,6 +11,9 @@ class LeftNeighbourIface {
     friend class Network;
 
 public:
+    void RequestComputationalData(const ::disco_plat::nodeID& destinationID) {
+        parent->enqueItem(new Left_RequestComputationalData(destinationID));
+    }
     void NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID) {
         parent->enqueItem(new Left_NeigbourDied(reportingNodeID, deadNodeID));
     }
@@ -20,9 +23,6 @@ public:
     void UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) {
         parent->enqueItem(new Left_UpdateLeftNode(newNodeID));
     }
-//    void Boomerang(const ::disco_plat::blob& data) {
-//        parent->enqueItem(new Left_Boomerang(data));
-//    }
 };
 
 class RightNeighbourIface {
