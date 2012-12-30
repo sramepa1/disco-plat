@@ -29,6 +29,23 @@ void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out ol
 
 void LeftNeighbourImpl::NeigbourDied(const nodeID& reportingNodeID, const nodeID& deadNodeID) {
     cout << "Recieved message NeigbourDied from left neighbour" << endl;
+
+//    // TODO: check if I gave work to dead node
+
+//    if(networkModule->getRightNeighbourState() == DEAD) {
+//        networkModule->getRightNeighbourState() = OK;
+//        networkModule->changeRightNeighbour(reportingNodeID);
+//        networkModule->getMyRightInterface().UpdateLeftNode(networkModule->getMyID());
+//    } else {
+
+//        if(networkModule->getLeftNeighbourState() == MAYBE_DEAD) {
+//            networkModule->setLeftNeighbourState(OK);
+//        } else {
+//            networkModule->setRightNeighbourState(MAYBE_DEAD);
+//        }
+//        networkModule->getMyRightInterface().NeigbourDied(reportingNodeID, deadNodeID);
+
+//    }
 }
 
 
@@ -132,23 +149,46 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 /*****************************************************************/
 //  RightNeighbour
 
-void RightNeighbourImpl::RequestComputationalData(const nodeID& destinationID) {
-    cout << "Recieved message RequestComputationalData from right neighbour" << endl;
+//void RightNeighbourImpl::RequestComputationalData(const nodeID& destinationID) {
+//    cout << "Recieved message RequestComputationalData from right neighbour" << endl;
+//}
+
+
+void RightNeighbourImpl::BuildNetAndRequestData(const nodeID &newNeighbourID) {
+    cout << "Recieved message BuildNetAndRequestData from right neighbour" << endl;
+    networkModule->changeRightNeighbour(newNeighbourID);
+
+    // TODO: complete it
+}
+
+void RightNeighbourImpl::NeighbourDied(const nodeID& reportingNodeID, const nodeID& deadNodeID) {
+    cout << "Recieved message NeighbourDied from right neighbour" << endl;
+    networkModule->setReportNodeID(reportingNodeID);
+
+    // TODO: check if I gave work to dead node
+
+    networkModule->getMyLeftInterface().NeighbourDied(reportingNodeID, deadNodeID);
+}
+
+void RightNeighbourImpl::RebuildNetwork(const nodeID &newNeighbourID) {
+    cout << "Recieved message RebuildNetwork from right neighbour" << endl;
+    networkModule->changeRightNeighbour(newNeighbourID);
+    networkModule->repairNetwork();
 }
 
 
-void RightNeighbourImpl::NeigbourDied(const nodeID& reportingNodeID, const nodeID& deadNodeID) {
-    cout << "Recieved message NeigbourDied from right neighbour" << endl;
-}
+//void RightNeighbourImpl::UpdateRightNode(const nodeID& newNodeID) {
+//    cout << "Recieved message UpdateRightNode from right neighbour" << endl;
+//    networkModule->changeRightNeighbour(newNodeID);
+//}
 
 
-void RightNeighbourImpl::UpdateRightNode(const nodeID& newNodeID) {
-    cout << "Recieved message UpdateRightNode from right neighbour" << endl;
-    networkModule->changeRightNeighbour(newNodeID);
-}
+//void RightNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
+//    cout << "Recieved message UpdateLeftNode from right neighbour" << endl;
+//    networkModule->changeLeftNeighbour(newNodeID);
+//}
 
 
-void RightNeighbourImpl::UpdateLeftNode(const nodeID& newNodeID) {
-    cout << "Recieved message UpdateLeftNode from right neighbour" << endl;
-    networkModule->changeLeftNeighbour(newNodeID);
-}
+
+
+

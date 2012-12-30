@@ -120,7 +120,7 @@ void Repository::init() {
     pthread_mutex_lock(&dataMutex);
     isInitSleeping = true;
 
-    leftNb->RequestComputationalData(networkModule->getMyID());
+    //leftNb->RequestComputationalData(networkModule->getMyID());
 
     pthread_cond_wait(&initCondition, &dataMutex);
 

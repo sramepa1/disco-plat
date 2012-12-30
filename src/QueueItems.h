@@ -33,43 +33,43 @@ public:
     }
 };
 
-class Left_RequestComputationalData : public Left_QueueItem {
-    const ::disco_plat::nodeID& destinationID;
-public:
-    Left_RequestComputationalData(const ::disco_plat::nodeID& destinationID) : destinationID(destinationID) {}
-    void sendMe(NeighbourPair neighbours) {
-        neighbours.second->RequestComputationalData(destinationID);
-    }
-};
+//class Left_RequestComputationalData : public Left_QueueItem {
+//    const ::disco_plat::nodeID& destinationID;
+//public:
+//    Left_RequestComputationalData(const ::disco_plat::nodeID& destinationID) : destinationID(destinationID) {}
+//    void sendMe(NeighbourPair neighbours) {
+//        neighbours.second->RequestComputationalData(destinationID);
+//    }
+//};
 
-class Left_NeigbourDied : public Left_QueueItem {
+class Left_NeighbourDied : public Left_QueueItem {
     const ::disco_plat::nodeID reportingNodeID;
     const ::disco_plat::nodeID& deadNodeID;
 public:
-    Left_NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID)
+    Left_NeighbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID)
         : reportingNodeID(reportingNodeID), deadNodeID(deadNodeID) {}
     void sendMe(NeighbourPair neighbours) {
-        neighbours.second->NeigbourDied(reportingNodeID, deadNodeID);
+        neighbours.second->NeighbourDied(reportingNodeID, deadNodeID);
     }
 };
 
-class Left_UpdateRightNode : public Left_QueueItem {
-    const ::disco_plat::nodeID newNodeID;
+class Left_RebuildNetwork : public Left_QueueItem {
+    const ::disco_plat::nodeID newNeighbourID;
 public:
-    Left_UpdateRightNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
+    Left_RebuildNetwork(const ::disco_plat::nodeID& newNeighbourID) : newNeighbourID(newNeighbourID) {}
     void sendMe(NeighbourPair neighbours) {
-        neighbours.second->UpdateRightNode(newNodeID);
+        neighbours.second->RebuildNetwork(newNeighbourID);
     }
 };
 
-class Left_UpdateLeftNode : public Left_QueueItem {
-    const ::disco_plat::nodeID newNodeID;
-public:
-    Left_UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
-    void sendMe(NeighbourPair neighbours) {
-        neighbours.second->UpdateLeftNode(newNodeID);
-    }
-};
+//class Left_UpdateLeftNode : public Left_QueueItem {
+//    const ::disco_plat::nodeID newNodeID;
+//public:
+//    Left_UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
+//    void sendMe(NeighbourPair neighbours) {
+//        neighbours.second->UpdateLeftNode(newNodeID);
+//    }
+//};
 
 
 /*****************************************************************/
@@ -87,34 +87,34 @@ public:
     }
 };
 
-class Right_NeigbourDied : public Right_QueueItem {
-    const ::disco_plat::nodeID reportingNodeID;
-    const ::disco_plat::nodeID& deadNodeID;
-public:
-    Right_NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID)
-        : reportingNodeID(reportingNodeID), deadNodeID(deadNodeID) {}
-    void sendMe(NeighbourPair neighbours) {
-        neighbours.first->NeigbourDied(reportingNodeID, deadNodeID);
-    }
-};
+//class Right_NeigbourDied : public Right_QueueItem {
+//    const ::disco_plat::nodeID reportingNodeID;
+//    const ::disco_plat::nodeID& deadNodeID;
+//public:
+//    Right_NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID)
+//        : reportingNodeID(reportingNodeID), deadNodeID(deadNodeID) {}
+//    void sendMe(NeighbourPair neighbours) {
+//        neighbours.first->NeigbourDied(reportingNodeID, deadNodeID);
+//    }
+//};
 
-class Right_UpdateRightNode : public Right_QueueItem {
-    const ::disco_plat::nodeID newNodeID;
-public:
-    Right_UpdateRightNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
-    void sendMe(NeighbourPair neighbours) {
-        neighbours.first->UpdateRightNode(newNodeID);
-    }
-};
+//class Right_UpdateRightNode : public Right_QueueItem {
+//    const ::disco_plat::nodeID newNodeID;
+//public:
+//    Right_UpdateRightNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
+//    void sendMe(NeighbourPair neighbours) {
+//        neighbours.first->UpdateRightNode(newNodeID);
+//    }
+//};
 
-class Right_UpdateLeftNode : public Right_QueueItem {
-    const ::disco_plat::nodeID newNodeID;
-public:
-    Right_UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
-    void sendMe(NeighbourPair neighbours) {
-        neighbours.first->UpdateLeftNode(newNodeID);
-    }
-};
+//class Right_UpdateLeftNode : public Right_QueueItem {
+//    const ::disco_plat::nodeID newNodeID;
+//public:
+//    Right_UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) : newNodeID(newNodeID) {}
+//    void sendMe(NeighbourPair neighbours) {
+//        neighbours.first->UpdateLeftNode(newNodeID);
+//    }
+//};
 
 class Right_Boomerang : public Right_QueueItem {
     const ::disco_plat::blob data;

@@ -32,8 +32,8 @@ static struct option long_options[] = {
 };
 
 void startNetwork(int port, const char* networkInterface, const char* algorithm, const char* address) {
-    repo = new Repository();
     networkModule = new Network(port, networkInterface, algorithm);
+    repo = new Repository();
     networkModule->start(address);
     repo->init();
 }

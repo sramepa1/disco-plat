@@ -45,10 +45,10 @@ interface LeftNeighbour {
     
     // Informs the sircle that a node died. Message shall be resend in the original direction till it finds the other end.
     // Shall be folowed by closing cirlcle form the end.
-    void NeigbourDied(in nodeID reportingNodeID, in nodeID deadNodeID);
+    //void NeigbourDied(in nodeID reportingNodeID, in nodeID deadNodeID);
     
-    void UpdateRightNode(in nodeID newNodeID);
-    void UpdateLeftNode(in nodeID newNodeID);
+    //void UpdateRightNode(in nodeID newNodeID);
+    //void UpdateLeftNode(in nodeID newNodeID);
     
     // General boomerang token sending a regular service data. This token shall run clockwise only.
     void Boomerang(in blob data);
@@ -60,10 +60,11 @@ interface RightNeighbour {
 
     // Requests for initial data which describes the specific instance of problem (e.g. weights, costs of all items and
     // capacity in knapsack problem).
-    void RequestComputationalData(in nodeID destinationID);
-    void NeigbourDied(in nodeID reportingNodeID, in nodeID deadNodeID);
-    void UpdateRightNode(in nodeID newNodeID);
-    void UpdateLeftNode(in nodeID newNodeID);
+    void BuildNetAndRequestData(in nodeID newNeighbourID);
+    void NeighbourDied(in nodeID reportingNodeID, in nodeID deadNodeID);
+
+    void RebuildNetwork(in nodeID newNeighbourID);
+    //void UpdateLeftNode(in nodeID newNodeID);
 
 };
 

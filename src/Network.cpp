@@ -26,7 +26,8 @@ using namespace disco_plat;
     } \
     var = type::_narrow(tempObj);
 
-Network::Network(int port, const char* networkInterface, const char* algorithm) : sendThreadRunning(true) {
+Network::Network(int port, const char* networkInterface, const char* algorithm) : sendThreadRunning(true),
+    rightNeighbourState(OK), leftNeighbourState(OK), networkBroken(false) {
 
     pthread_mutex_init(&bindMutex, NULL);
     pthread_mutex_init(&queueMutex, NULL);
@@ -105,12 +106,7 @@ void Network::start(const char* remoteAddr) {
 
         if(remoteAddr == NULL) {
             // first node case
-            rightID = myID;
-            BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", myID.identifier, rightRemoteObject, LeftNeighbour);
-
-            leftID = myID;
-            BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", myID.identifier, leftRemoteObject, RightNeighbour);
-
+            createSingleNodeNetwork();
         } else {
             // non-first node case
             rightID.identifier = remoteAddr;
@@ -130,7 +126,8 @@ void Network::start(const char* remoteAddr) {
             BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)leftID.identifier, leftRemoteObject,
                             RightNeighbour);
 
-            getMyLeftInterface().UpdateRightNode(myID);
+            leftRemoteObject->BuildNetAndRequestData(myID);
+            //getMyLeftInterface().UpdateRightNode(myID);
         }
 
         // starting send thread
@@ -138,6 +135,27 @@ void Network::start(const char* remoteAddr) {
             throw "Cannot create sending thread!!!";
         }
 
+    } catch(...) {
+        pthread_mutex_unlock(&bindMutex);
+        throw;
+    }
+    pthread_mutex_unlock(&bindMutex);
+}
+
+void Network::createSingleNodeNetwork() {
+    CORBA::Object_var tempObj;
+
+    rightID = myID;
+    BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", myID.identifier, rightRemoteObject, LeftNeighbour);
+
+    leftID = myID;
+    BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", myID.identifier, leftRemoteObject, RightNeighbour);
+}
+
+void Network::createSingleNodeNetworkWithMutex() {
+    pthread_mutex_lock(&bindMutex);
+    try {
+        createSingleNodeNetwork();
     } catch(...) {
         pthread_mutex_unlock(&bindMutex);
         throw;
@@ -217,7 +235,17 @@ void* Network::sendThreadMain(void* ptr) {
             pthread_mutex_lock(&instance->bindMutex);
             try {
                 current->sendMeAndThrow(make_pair(instance->rightRemoteObject, instance->leftRemoteObject));
-            } catch(CORBA::SystemException& ex) {       // TODO: better exception handling
+            } catch(LeftNeighbourCommFailure&) {
+                cerr << "Left neighbour disconnected" << endl;
+                pthread_mutex_unlock(&instance->bindMutex);
+                instance->reportDeadLeftNode();
+                goto mutexJump;
+            } catch(RightNeighbourCommFailure&) {
+                cerr << "Right neighbour disconnected" << endl;
+                pthread_mutex_unlock(&instance->bindMutex);
+                instance->reportDeadRightNode();
+                goto mutexJump;
+            } catch(CORBA::SystemException& ex) {
                 cerr << "Caught CORBA::SystemException." << endl;
                 ex._print(cerr);
                 cerr << endl;
@@ -229,7 +257,7 @@ void* Network::sendThreadMain(void* ptr) {
                 cerr << "Caught unknown exception." << endl;
             }
             pthread_mutex_unlock(&instance->bindMutex);
-
+mutexJump:
             delete current;
 
             pthread_mutex_lock(&instance->queueMutex);
@@ -275,4 +303,50 @@ void Network::changeLeftNeighbour(const nodeID& newID) {
         throw;
     }
     pthread_mutex_unlock(&bindMutex);
+}
+
+void Network::reportDeadLeftNode() {
+
+    pthread_mutex_lock(&bindMutex);
+    try {
+        CORBA::Object_var tempObj;
+        leftID = reportNodeID;
+        BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)reportNodeID.identifier, leftRemoteObject,
+                        RightNeighbour);
+
+        leftRemoteObject->RebuildNetwork(myID);
+    } catch(...) {
+        pthread_mutex_unlock(&bindMutex);
+        throw;
+    }
+    pthread_mutex_unlock(&bindMutex);
+
+
+//    if(leftNeighbourState == OK) {
+//        leftNeighbourState = DEAD;
+//        // TODO: check if I gave work to dead node
+//        try {
+//            getMyRightInterface().NeigbourDied(getMyID(), getLeftID());
+//        } catch(RightNeighbourCommFailure&) {
+//            createSingleNodeNetworkWithMutex();
+//        }
+
+//        rightNeighbourState = MAYBE_DEAD;
+//    }
+}
+
+void Network::reportDeadRightNode() {
+    if(!networkBroken) {
+
+        rightNeighbourState = DEAD;
+        // TODO: check if I gave work to dead node
+        try {
+            leftRemoteObject->NeighbourDied(getMyID(), getRightID());
+            networkBroken = true;
+        } catch(CORBA::COMM_FAILURE&) {
+            createSingleNodeNetworkWithMutex();
+        }
+
+        leftNeighbourState = MAYBE_DEAD;
+    }
 }

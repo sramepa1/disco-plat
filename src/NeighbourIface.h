@@ -11,18 +11,18 @@ class LeftNeighbourIface {
     friend class Network;
 
 public:
-    void RequestComputationalData(const ::disco_plat::nodeID& destinationID) {
-        parent->enqueItem(new Left_RequestComputationalData(destinationID));
+//    void RequestComputationalData(const ::disco_plat::nodeID& destinationID) {
+//        parent->enqueItem(new Left_RequestComputationalData(destinationID));
+//    }
+    void NeighbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID) {
+        parent->enqueItem(new Left_NeighbourDied(reportingNodeID, deadNodeID));
     }
-    void NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID) {
-        parent->enqueItem(new Left_NeigbourDied(reportingNodeID, deadNodeID));
+    void RebuildNetwork(const ::disco_plat::nodeID& newNeighbourID) {
+        parent->enqueItem(new Left_RebuildNetwork(newNeighbourID));
     }
-    void UpdateRightNode(const ::disco_plat::nodeID& newNodeID) {
-        parent->enqueItem(new Left_UpdateRightNode(newNodeID));
-    }
-    void UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) {
-        parent->enqueItem(new Left_UpdateLeftNode(newNodeID));
-    }
+//    void UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) {
+//        parent->enqueItem(new Left_UpdateLeftNode(newNodeID));
+//    }
 };
 
 class RightNeighbourIface {
@@ -32,15 +32,15 @@ class RightNeighbourIface {
     friend class Network;
 
 public:
-    void NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID) {
-        parent->enqueItem(new Right_NeigbourDied(reportingNodeID, deadNodeID));
-    }
-    void UpdateRightNode(const ::disco_plat::nodeID& newNodeID) {
-        parent->enqueItem(new Right_UpdateRightNode(newNodeID));
-    }
-    void UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) {
-        parent->enqueItem(new Right_UpdateLeftNode(newNodeID));
-    }
+//    void NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID) {
+//        parent->enqueItem(new Right_NeigbourDied(reportingNodeID, deadNodeID));
+//    }
+//    void UpdateRightNode(const ::disco_plat::nodeID& newNodeID) {
+//        parent->enqueItem(new Right_UpdateRightNode(newNodeID));
+//    }
+//    void UpdateLeftNode(const ::disco_plat::nodeID& newNodeID) {
+//        parent->enqueItem(new Right_UpdateLeftNode(newNodeID));
+//    }
     void Boomerang(const ::disco_plat::blob& data) {
         parent->enqueItem(new Right_Boomerang(data));
     }
