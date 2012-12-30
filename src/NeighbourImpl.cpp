@@ -73,7 +73,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             break;
 
         case RESULT :
-            synchModule->informResult(data.data.get_buffer(), data.data.length());
+            currentSyncModule->informResult(data.data.get_buffer(), data.data.length());
             break;
 
         case TERMINATION_TOKEN :
@@ -81,7 +81,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             break;
 
         case TERMINATE :
-            synchModule->informTerminate();
+            currentSyncModule->informTerminate();
             break;
 
         case ID_SEARCH :

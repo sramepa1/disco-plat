@@ -3,6 +3,7 @@
 
 #include "globals.h"
 #include "NeighbourIface.h"
+#include "Computation.h"
 
 class Synchronization
 {
@@ -12,11 +13,13 @@ class Synchronization
 
     unsigned int computationID;
 
+    Computation* comp;
+
     // DISABLED
     Synchronization(const Synchronization&) {}
 
 public:
-    Synchronization();
+    Synchronization(Computation* comp);
     ~Synchronization();
 
     /**

@@ -5,7 +5,7 @@
 using namespace std;
 using namespace disco_plat;
 
-Synchronization::Synchronization()
+Synchronization::Synchronization(Computation* comp) : comp(comp)
 {
     leftNb = &networkModule->getMyLeftInterface();
     rightNb = &networkModule->getMyRightInterface();

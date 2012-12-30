@@ -2,6 +2,10 @@
 #include "globals.h"
 #include "Network.h"
 #include "Synchronization.h"
+#include "Repository.h"
+#include "Algo.h"
+#include "Computation.h"
+#include "Knapsack.h"
 
 #include <iostream>
 
@@ -21,7 +25,7 @@ using namespace std;
 
 // global vars definition
 Network* networkModule;
-Synchronization* synchModule;
+Synchronization* currentSyncModule;
 
 static struct option long_options[] = {
     {"port", 1, 0, 'p'},
@@ -30,6 +34,12 @@ static struct option long_options[] = {
     {"file", 1, 0, 'f'},
     {NULL, 0, NULL, 0}
 };
+
+void startNetwork(int port, const char* networkInterface, const char* algorithm, const char* address) {
+    networkModule = new Network(port, networkInterface, algorithm);
+    networkModule->start(address);
+    repo = new Repository();
+}
 
 int main(int argc, char** argv) {
 
@@ -43,7 +53,6 @@ int main(int argc, char** argv) {
     int port = DEFAULT_PORT;
     const char* address = NULL;
     const char* name = "ham0";
-    const char* algoritm = "";
     const char* file = NULL;
 
     int character;
@@ -76,21 +85,51 @@ int main(int argc, char** argv) {
     cout << "Initializing network module with port " << port << ", name '" << name << "' and address '"
          << (address == NULL ? "NULL" : address) << "'" << endl;
 
+    AlgoFactory::registerAlgorithm("Knapsack", &Knapsack::knapsackConstructor);
 
     try {
-        // create connection
-        networkModule = new Network(port, name, algoritm);
-        networkModule->start(address);
 
-        synchModule = new Synchronization();
+        string algoName;
+        ifstream inFile;
+        unsigned int initialID;
 
-        // some useful work... :)
-        sleep(60);
+        if(file) {
+            inFile.open(file);
+            if(inFile.fail()) {
+                throw (string("Unable to open file ") + file).c_str();
+            }
+            getline(inFile, algoName);
+            if(!inFile.good()) {
+                throw (string("Error reading file ") + file).c_str();
+            }
 
-        // network cleanup
+            startNetwork(port, name, algoName.c_str(), address);
+
+            initialID = repo->getFreeID();
+            repo->newData(initialID, algoName,
+                          string(istreambuf_iterator<char>(inFile), istreambuf_iterator<char>()),
+                            // range-constructed string containing almost the entire input file
+                            // (from current position to end-of-stream (default constructor)
+                          true);
+
+        } else {
+
+            if(!address) {
+                throw "Cannot start with neither an address to join nor an instance file!";
+            }
+
+            startNetwork(port, name, "", address);
+
+            initialID = repo->getAnyValidID();
+        }
+
+        repo->start(initialID);
+
+        // cleanup
         delete networkModule;
+
     } catch(const char* str) {
-        cerr << "Caught string exception: " << str << endl;
+        cerr << "Error: " << str << endl;
     }
 
     return 0;

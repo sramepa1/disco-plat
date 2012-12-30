@@ -3,8 +3,10 @@
 
 class Network;
 class Synchronization;
+class Repository;
 
 extern Network* networkModule;
-extern Synchronization* synchModule;
+extern Synchronization* currentSyncModule;  // TODO: move responsibility to a getter in Repository?
+extern Repository* repo;
 
 #endif // GLOBALS_H
