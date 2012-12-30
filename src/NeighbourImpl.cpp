@@ -10,6 +10,13 @@
 using namespace std;
 using namespace disco_plat;
 
+
+#define CID_GLOBAL_ID 0
+
+#define SA_IA_PROPAGATE_FURTER 0
+#define SA_IA_DONT_PROPAGATE 1
+
+
 /*****************************************************************/
 //  LeftNeighbour
 
@@ -25,7 +32,7 @@ void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out ol
 }
 
 
-void LeftNeighbourImpl::NeigbourDied(const nodeID& reportingNodeID) {
+void LeftNeighbourImpl::NeigbourDied(const nodeID& reportingNodeID, const nodeID& deadNodeID) {
     cout << "Recieved message NeigbourDied from left neighbour" << endl;
 }
 
@@ -89,6 +96,10 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
     case INSTANCE_ANNOUNCEMENT :
 
+        if(SA_IA_PROPAGATE_FURTER) {
+
+        }
+
         break;
 
     case INSTANCE_REQUEST :
@@ -122,7 +133,7 @@ void RightNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out o
 }
 
 
-void RightNeighbourImpl::NeigbourDied(const nodeID& reportingNodeID) {
+void RightNeighbourImpl::NeigbourDied(const nodeID& reportingNodeID, const nodeID& deadNodeID) {
     cout << "Recieved message NeigbourDied from right neighbour" << endl;
 }
 

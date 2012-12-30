@@ -41,7 +41,7 @@ interface LeftNeighbour {
     
     // Informs the sircle that a node died. Message shall be resend in the original direction till it finds the other end.
     // Shall be folowed by closing cirlcle form the end.
-    void NeigbourDied(in nodeID reportingNodeID);
+    void NeigbourDied(in nodeID reportingNodeID, in nodeID deadNodeID);
     
     void UpdateRightNode(in nodeID newNodeID);
     void UpdateLeftNode(in nodeID newNodeID);
@@ -55,7 +55,7 @@ interface LeftNeighbour {
 interface RightNeighbour {
 
     void ConnectAsLeftNode(in nodeID newNodeID, out nodeID oldLeftNodeID);
-    void NeigbourDied(in nodeID reportingNodeID);
+    void NeigbourDied(in nodeID reportingNodeID, in nodeID deadNodeID);
     void UpdateRightNode(in nodeID newNodeID);
     void UpdateLeftNode(in nodeID newNodeID);
     void Boomerang(in blob data);

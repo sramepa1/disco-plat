@@ -19,10 +19,13 @@ public:
 
 class Left_NeigbourDied : public QueueItem {
     const ::disco_plat::nodeID reportingNodeID;
+    const ::disco_plat::nodeID& deadNodeID;
 public:
-    Left_NeigbourDied(const ::disco_plat::nodeID& reportingNodeID) : reportingNodeID(reportingNodeID) {}
+    Left_NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID)
+        : reportingNodeID(reportingNodeID), deadNodeID(deadNodeID) {}
+
     void sendMe(NeighbourPair neighbours) {
-        neighbours.second->NeigbourDied(reportingNodeID);
+        neighbours.second->NeigbourDied(reportingNodeID, deadNodeID);
     }
 };
 
@@ -59,10 +62,12 @@ public:
 
 class Right_NeigbourDied : public QueueItem {
     const ::disco_plat::nodeID reportingNodeID;
+    const ::disco_plat::nodeID& deadNodeID;
 public:
-    Right_NeigbourDied(const ::disco_plat::nodeID& reportingNodeID) : reportingNodeID(reportingNodeID) {}
+    Right_NeigbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID)
+        : reportingNodeID(reportingNodeID), deadNodeID(deadNodeID) {}
     void sendMe(NeighbourPair neighbours) {
-        neighbours.first->NeigbourDied(reportingNodeID);
+        neighbours.first->NeigbourDied(reportingNodeID, deadNodeID);
     }
 };
 
