@@ -20,6 +20,7 @@ Repository::Repository() {
     pthread_cond_init(&initCondition, NULL);
 
     isInitSleeping = false;
+    isFreeIDSleeping = false;
 }
 
 Repository::~Repository() {
@@ -28,7 +29,31 @@ Repository::~Repository() {
 }
 
 unsigned int Repository::getFreeID() {
-    return 42;  // TODO: Return a free computation ID
+
+    if(networkModule->getLeftID().identifier == networkModule->getMyID().identifier) {
+        return maxID++;
+    }
+
+
+    blob message;
+    message.sourceNode = networkModule->getMyID();
+    message.computationID = BLOB_CID_GLOBAL_ID;
+    message.messageType = FREE_ID_SEARCH;
+    message.slotA = maxID;
+
+    rightNb->Boomerang(message);
+
+
+    pthread_mutex_lock(&dataMutex);
+    isFreeIDSleeping = true;
+
+    pthread_cond_wait(&initCondition, &dataMutex);
+
+    isFreeIDSleeping = false;
+    pthread_mutex_unlock(&dataMutex);
+
+
+    return ++maxID;
 }
 
 unsigned int Repository::getAnyValidID() {
@@ -115,27 +140,36 @@ pair<AlgoInstance*, Computation*> Repository::getAlgoComp(unsigned int id) {
 
 
 void Repository::init() {
-
-    if(networkModule->getLeftID().identifier == networkModule->getMyID().identifier)
+    if(networkModule->getLeftID().identifier == networkModule->getMyID().identifier) {
+        maxID = 1;
         return;
+    }
 
-    // TODO: Populate this->data from network!
     pthread_mutex_lock(&dataMutex);
     isInitSleeping = true;
-
-    //leftNb->RequestComputationalData(networkModule->getMyID());
 
     pthread_cond_wait(&initCondition, &dataMutex);
 
     isInitSleeping = false;
     pthread_mutex_unlock(&dataMutex);
-
 }
+
 
 void Repository::awakeInit() {
     pthread_mutex_lock(&dataMutex);
 
     if(isInitSleeping) {
+        pthread_cond_signal(&initCondition);
+    }
+
+    pthread_mutex_unlock(&dataMutex);
+}
+
+
+void Repository::awakeFreeID() {
+    pthread_mutex_lock(&dataMutex);
+
+    if(isFreeIDSleeping) {
         pthread_cond_signal(&initCondition);
     }
 

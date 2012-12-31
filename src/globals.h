@@ -23,6 +23,6 @@ extern Repository* repo;
 #define BLOB_SA_IA_NONE 0
 #define BLOB_SA_IA_INIT_RESUME 1
 
-#define CID_GLOBAL_ID 0
+#define BLOB_CID_GLOBAL_ID 0
 
 #endif // GLOBALS_H

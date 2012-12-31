@@ -34,6 +34,10 @@ public:
     ///////// interface for calling from networ init only
 
     void awakeInit();
+    void awakeFreeID();
+
+    unsigned int getMaxID() { return maxID; }
+    void setMaxID(unsigned int maxID) { this->maxID = maxID; }
 
 
 private:
@@ -44,9 +48,14 @@ private:
     pthread_cond_t initCondition;
 
     bool isInitSleeping;
+    bool isFreeIDSleeping;
+
+    unsigned int maxID;
 
     LeftNeighbourIface* leftNb;
     RightNeighbourIface* rightNb;
+
+    void waitThread();
 };
 
 #endif // REPOSITORY_H

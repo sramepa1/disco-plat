@@ -30,12 +30,19 @@ void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out ol
 void LeftNeighbourImpl::Boomerang(const blob& data) {
     cout << "Recieved message Boomerang from left neighbour" << endl;
 
+    blob myData(data);
+
     bool originMe = false;
+    bool originRightNeighbour = false;
     bool sendFurther = true;
 
     if(data.sourceNode.identifier == networkModule->getMyID().identifier) {
         sendFurther = false;
         originMe = true;
+    }
+
+    if(data.sourceNode.identifier == networkModule->getRightID().identifier) {
+        originRightNeighbour = true;
     }
 
     ////////// Fully started
@@ -78,22 +85,34 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             if(currentSyncModule == NULL) exit(ERR_COMMAND_TERMINATE);
             break;
 
-        case ID_SEARCH :
+        case FREE_ID_SEARCH :
 
             if(originMe) {
-                //TODO set info to storage
+                //wake repository
+                repo->setMaxID(data.slotA);
+                repo->awakeFreeID();
+
             } else {
-                //TODO change to my ID if greater
+                //change to my maxID if greater
+                if(repo->getMaxID() > data.slotA) {
+                    myData.slotA = repo->getMaxID();
+                }
             }
 
             break;
 
         case INSTANCE_ANNOUNCEMENT :
 
-            repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
+            if(!originMe) {
+                repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
 
-            if(data.slotA == BLOB_SA_IA_INIT_RESUME) {
-                repo->awakeInit();
+                if(data.slotA == BLOB_SA_IA_INIT_RESUME) {
+                    repo->awakeInit();
+                }
+
+                if(originRightNeighbour) {
+                    sendFurther = false;
+                }
             }
 
             break;
@@ -105,7 +124,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
     if(sendFurther) {
         RightNeighbourIface& right = networkModule->getMyRightInterface();
-        right.Boomerang(data);
+        right.Boomerang(myData);
         cout << "Sent message Boomerang to right neighbour" << endl;
     }
 }
