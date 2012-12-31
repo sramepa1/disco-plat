@@ -5,6 +5,7 @@
 extern "C" {
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 }
 
 using namespace std;
@@ -15,18 +16,22 @@ Computation::Computation() :    algo(NULL), sync(NULL),
                                 stackTop(0),
                                 optimum(0), optimalConfig(NULL),
                                 newSolutionFound(false), trivialSolution(false),
-                                loopsToSync(1000)   // TODO: Increase to 100K ~ 1M and make adaptive
+                                loopsToSync(3000000)
 {
+    timestamp = areWeThereYet();
 }
 
 Computation::~Computation() {
     deallocateAll();
 }
 
+uint64_t Computation::areWeThereYet() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
 
-/*
- *  WORK IN PROGRESS, THIS WILL LIKELY CHANGE A LOT!
- */
+    uint64_t now = ts.tv_sec * (uint64_t)1000 + ts.tv_nsec / (uint64_t)1000000; // get milliseconds
+    return now;
+}
 
 
 void Computation::setAlgorithm(AlgoInstance *algo) {
@@ -71,6 +76,23 @@ void Computation::DFS() {
             }
 
             if(++synchroCounter >= loopsToSync) {
+
+                uint64_t now = areWeThereYet();
+                uint64_t delta = now - timestamp;
+                timestamp = now;
+                if(delta < 300) {
+                    #ifdef VERBOSE
+                    cout << "Adaptive loop delta was too low: " << delta << ", doubling loop counter" << endl;
+                    #endif
+                    loopsToSync *= 2;
+                }
+                if(delta > 1000) {
+                    #ifdef VERBOSE
+                    cout << "Adaptive loop delta was too high: " << delta << ", halving loop counter" << endl;
+                    #endif
+                    loopsToSync /= 2;
+                }
+
                 synchronize();
                 synchroCounter = 0;
             }
@@ -111,7 +133,9 @@ vector<char*> Computation::splitWork(int requestCount) {
 
 
 void Computation::setWork(const char* configStack, const std::pair<int,int> * intervalStack, int depth) {
+
     /*TODO: implement*/
+
     algo->dataChanged();
     newSolutionFound = false;
 }

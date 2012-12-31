@@ -4,6 +4,10 @@
 #include <utility>
 #include <vector>
 
+extern "C" {
+#include <stdint.h>
+}
+
 class Synchronization;
 class AlgoInstance;
 
@@ -130,11 +134,14 @@ private:
     bool trivialSolution;   // flag to use when a trivial solution is found elsewhere
 
     int loopsToSync;    // Count of DFS iterations betwen synchronizations.
+    uint64_t timestamp;
 
     void DFS();
     void synchronize();
 
     void deallocateAll();
+
+    uint64_t areWeThereYet();
 
 };
 
