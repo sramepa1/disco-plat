@@ -15,8 +15,8 @@ Computation::Computation() :    algo(NULL), sync(NULL),
                                 intervalStack(NULL), intervalStackCopy(NULL),
                                 stackTop(0),
                                 optimum(0), optimalConfig(NULL),
-                                newSolutionFound(false), trivialSolution(false),
-                                loopsToSync(3000000)
+                                newSolutionFound(false), absoluteSolution(false),
+                                loopCounter(0), loopsToSync(3000000)
 {
     timestamp = areWeThereYet();
 }
@@ -58,7 +58,7 @@ void Computation::start() {
 
 void Computation::DFS() {
     try {
-        int synchroCounter = 0;
+        loopCounter = 0;
 
         while(true) {
 
@@ -75,42 +75,40 @@ void Computation::DFS() {
                 }
             }
 
-            if(++synchroCounter >= loopsToSync) {
-
-                uint64_t now = areWeThereYet();
-                uint64_t delta = now - timestamp;
-                timestamp = now;
-                if(delta < 300) {
-                    #ifdef VERBOSE
-                    cout << "Adaptive loop delta was too low: " << delta << ", doubling loop counter" << endl;
-                    #endif
-                    loopsToSync *= 2;
-                }
-                if(delta > 1000) {
-                    #ifdef VERBOSE
-                    cout << "Adaptive loop delta was too high: " << delta << ", halving loop counter" << endl;
-                    #endif
-                    loopsToSync /= 2;
-                }
-
+            if(++loopCounter >= loopsToSync) {
                 synchronize();
-                synchroCounter = 0;
+                loopCounter = 0;
             }
         }
 
 
-    } catch(TrivialSolutionException) {
-        cout << "Remote trivial solution detected" << endl;
+    } catch(AbsoluteSolutionException) {
+        cout << "Absolute solution detected." << endl;
     }
 }
 
 void Computation::synchronize() {
 
-    // TODO: Adaptively update loopsToSync
+    uint64_t now = areWeThereYet();
+    uint64_t delta = now - timestamp;
+    timestamp = now;
+    if(delta < 300) {
+        #ifdef VERBOSE
+        cout << "Adaptive loop delta was too low: " << delta << ", doubling loop counter" << endl;
+        #endif
+        loopsToSync *= 2;
+    }
+    if(delta > 1000) {
+        #ifdef VERBOSE
+        cout << "Adaptive loop delta was too high: " << delta << ", halving loop counter" << endl;
+        #endif
+        loopsToSync /= 2;
+    }
 
     sync->synchronize();
-    if(trivialSolution) {
-        throw TrivialSolutionException();
+
+    if(absoluteSolution) {
+        throw AbsoluteSolutionException();
     }
 }
 
@@ -127,24 +125,42 @@ bool Computation::isBetter(opt_t thisOptimum, opt_t thanThisOptimum) {
 }
 
 
-vector<char*> Computation::splitWork(int requestCount) {
-    return vector<char*>(); // TODO: Actual work splitting
+bool Computation::splitWork(WorkUnit& work) {
+
+    //int depth = stackTop + 1;
+    //work.depth = depth;
+
+    //work.configStackVector.clear();
+    //work.configStackVector.resize(instanceSize * depth);
+
+    return false; // TODO: Actual work splitting
 }
 
 
-void Computation::setWork(const char* configStack, const std::pair<int,int> * intervalStack, int depth) {
+void Computation::setWork(WorkUnit& work) {
 
-    /*TODO: implement*/
+    if(instanceSize != work.instanceSize) {
+        throw "Attempted to assign an incompatible work unit!";
+    }
+
+    stackTop = work.depth - 1;
+    memcpy(configStack, work.configStackVector.data(), instanceSize * work.depth);
+
+    int i = 0;
+    for(vector<int>::iterator it = work.intervalStackVector.begin(); it != work.intervalStackVector.end(); ++it) {
+        int tmp = *it++;
+        intervalStack[i++] = pair<int, int>(tmp, *it);
+    }
 
     algo->dataChanged();
     newSolutionFound = false;
 }
 
 
-void Computation::setSolution(opt_t optimum, vector<char> configuration, bool isTrivial) {
+void Computation::setSolution(opt_t optimum, vector<char> configuration, bool isAbsolute) {
     this->optimum = optimum;
     memcpy(optimalConfig, configuration.data(), instanceSize);
-    trivialSolution = isTrivial;
+    absoluteSolution = isAbsolute;
 }
 
 
@@ -152,13 +168,13 @@ void Computation::reinitialize(int instanceSize, opt_t initialOptimum, char* ini
     this->instanceSize = instanceSize;
     optimum = initialOptimum;
     stackTop = 0;
-    trivialSolution = false;
+    absoluteSolution = false;
     newSolutionFound = false;
 
     deallocateAll();
 
-    configStack = new char[instanceSize * instanceSize];
-    intervalStack = new pair<int, int>[instanceSize * instanceSize];
+    configStack = new char[instanceSize * (instanceSize + 1)];
+    intervalStack = new pair<int, int>[instanceSize * (instanceSize + 1)];
     optimalConfig = new char[instanceSize];
 
     memcpy(optimalConfig, initialConfiguration, instanceSize);
@@ -166,9 +182,13 @@ void Computation::reinitialize(int instanceSize, opt_t initialOptimum, char* ini
     intervalStack[0] = pair<int, int>(0, instanceSize);
 }
 
-void Computation::newSolution(opt_t optimum, char* configuration) {
+void Computation::newSolution(opt_t optimum, char* configuration, bool isAbsolute) {
     this->optimum = optimum;
     memcpy(optimalConfig, configuration, instanceSize);
+    if(isAbsolute) {
+        absoluteSolution = true;
+        loopCounter = loopsToSync; // sync immediately
+    }
     newSolutionFound = true;
 }
 

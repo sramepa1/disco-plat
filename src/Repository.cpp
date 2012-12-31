@@ -63,7 +63,7 @@ unsigned int Repository::getAnyValidID() {
     if(it == data.end())
     {
         pthread_mutex_unlock(&dataMutex);
-        throw "Requested a valid computation ID from an empty repository!";
+        return INVALID_COMPUTATION_ID;
     }
 
     pthread_mutex_unlock(&dataMutex);

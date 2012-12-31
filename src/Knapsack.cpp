@@ -50,7 +50,7 @@ bool Knapsack::evaluate() {
 	char* configuration;
 	comp->peekState(configuration, interval);
 
-	int depth = comp->getDepth();
+	int depth = comp->getDepthLevel();
 
 	int thisCost = costCache[depth];
 	int thisWeight = weightCache[depth];
@@ -81,7 +81,7 @@ void Knapsack::expand() {
 	comp->peekState(configuration, interval);
 	memcpy(configBuffer, configuration, instanceSize);
 
-	int depth = comp->getDepth();
+	int depth = comp->getDepthLevel();
 	int thisWeight = weightCache[depth];
 
 	for(int i = interval.first; i < interval.second; i++) {
@@ -103,8 +103,8 @@ void Knapsack::expand() {
 			costCache[depth + 1] = newCost;
 			weightCache[depth + 1] = weightCache[depth] + weight[i];
 
-			if((opt_t)newCost > comp->getOptimum()) {
-				comp->newSolution(newCost, configBuffer);
+			if((opt_t)newCost >= comp->getOptimum()) {
+				comp->newSolution(newCost, configBuffer, depth == (int)instanceSize - 2);
 			}
 
 			return;
@@ -115,7 +115,7 @@ void Knapsack::expand() {
 }
 
 void Knapsack::dataChanged() {
-	for(int i = 0; i <= comp->getDepth(); i++) {
+	for(int i = 0; i <= comp->getDepthLevel(); i++) {
 		char* config = comp->accessConfigAtDepth(i);
 		int sumc;
 		int sumw;

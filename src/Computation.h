@@ -11,7 +11,15 @@ extern "C" {
 class Synchronization;
 class AlgoInstance;
 
-class TrivialSolutionException {};
+class AbsoluteSolutionException {};
+
+
+struct WorkUnit {
+    int instanceSize;
+    int depth;
+    std::vector<char> configStackVector;
+    std::vector<int> intervalStackVector;
+};
 
 
 typedef int opt_t;  // Integer-based optima are most common in NP-Hard problems. A little simplification won't hurt.
@@ -54,30 +62,32 @@ public:
     bool hasNewSolution() { return newSolutionFound; }
 
     /**
+     * Indicates if the current best known solution is an absolute one and no further work needs to be done.
+     */
+    bool isSolutionAbsolute() { return absoluteSolution; }
+
+    /**
      * Extracts the current best known solution. Lowers the "hasNewSolution" flag if it was set.
      */
     std::pair<opt_t, std::vector<char> > getSolution();
 
     /**
-     * Attempts to split avaliable work for requestCount other nodes.
-     * May return less slices than desired (or empty vector) if split is not possible.
-     *
-     * DATA TYPE OF VECTOR IS ONLY TEMPORARY FOR NOW!
+     * Attempts to split avaliable work in two. May return false if no work is available.
      */
-    std::vector<char*> splitWork(int requestCount);
+    bool splitWork(WorkUnit& work);
 
     /**
      * Sets a new stack to work with.
      *
      * SHOULD ONLY BE CALLED WHEN MAIN THREAD IS BLOCKED AFTER FINISHING PREVIOUS WORK.
      */
-    void setWork(const char* configStack, const std::pair<int,int> * intervalStack, int depth);
+    void setWork(WorkUnit& work);
 
     /**
      * Sets a new best solution found by another process.
-     * If marked as trivial, immediate termination will occur.
+     * If marked as absolute, immediate termination will occur.
      */
-    void setSolution(opt_t optimum, std::vector<char> configuration, bool isTrivial);
+    void setSolution(opt_t optimum, std::vector<char> configuration, bool isAbsolute);
 
     /**
      * Returns true if first opt_t operand is better than the second one;
@@ -94,12 +104,12 @@ public:
 
     opt_t getOptimum() { return optimum; }
 
-    int getDepth() { return stackTop; }
+    int getDepthLevel() { return stackTop; }
 
     char* accessConfigAtDepth(int depth) { return configStack + depth * instanceSize; }
     std::pair<int, int>& accessIntervalAtDepth(int depth) { return intervalStack[depth]; }
 
-    void newSolution(opt_t optimum, char* configuration);
+    void newSolution(opt_t optimum, char* configuration, bool isAbsolute);
 
     /**
      * Changes the "next" node to examine at the top of the stack
@@ -131,8 +141,9 @@ private:
     char* optimalConfig;
 
     bool newSolutionFound;  // flag to broadcast my solution upon next synchronization
-    bool trivialSolution;   // flag to use when a trivial solution is found elsewhere
+    bool absoluteSolution;  // flag to use when an absolute solution is found (be it here or elsewhere)
 
+    int loopCounter;
     int loopsToSync;    // Count of DFS iterations betwen synchronizations.
     uint64_t timestamp;
 

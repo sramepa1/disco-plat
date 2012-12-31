@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
 
         string algoName;
         ifstream inFile;
-        unsigned int initialID;
+        unsigned int computationID;
 
         if(file) {
             inFile.open(file);
@@ -102,8 +102,8 @@ int main(int argc, char** argv) {
 
             startNetwork(port, name, algoName.c_str(), address);
 
-            initialID = repo->getFreeID();
-            repo->newData(initialID, algoName,
+            computationID = repo->getFreeID();
+            repo->newData(computationID, algoName,
                           string(istreambuf_iterator<char>(inFile), istreambuf_iterator<char>()),
                             // range-constructed string containing almost the entire input file
                             // (from current position to end-of-stream (default constructor)
@@ -116,11 +116,14 @@ int main(int argc, char** argv) {
             }
 
             startNetwork(port, name, "", address);
-            initialID = repo->getAnyValidID();
+            computationID = repo->getAnyValidID();
         }
 
-        repo->start(initialID);
-        // TODO: attempt to start a different computation if available
+        do {
+            repo->start(computationID);
+            repo->destroy(computationID);
+            computationID = repo->getAnyValidID();
+        } while(computationID != INVALID_COMPUTATION_ID);
 
         // cleanup
         delete networkModule;

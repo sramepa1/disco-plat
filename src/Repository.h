@@ -8,6 +8,8 @@
 #include <pthread.h>
 #include <string>
 
+#define INVALID_COMPUTATION_ID 0
+
 class Repository
 {
 public:
