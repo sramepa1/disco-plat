@@ -73,12 +73,13 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
                 break;
 
-            case RESULT :
-                //currentSyncModule->informResult(data.charDataSequence .get_buffer(), data.data.length());
+            case RESULT : 
 
 #ifdef VERBOSE
             cout << "Message type is RESULT" << endl;
 #endif
+
+            //currentSyncModule->informResult(data.charDataSequence.get_buffer(), data.data.length());
 
                 break;
 

@@ -6,6 +6,7 @@
 #include "Computation.h"
 
 #include <pthread.h>
+#include <vector>
 
 
 enum SyncState { WORKING, SYNCHRONIZING, IDLING, TERMINATING };
@@ -13,23 +14,29 @@ enum SyncState { WORKING, SYNCHRONIZING, IDLING, TERMINATING };
 
 class Synchronization
 {
+    Computation* comp;
 
     LeftNeighbourIface* leftNb;
     RightNeighbourIface* rightNb;
 
     unsigned int computationID;
 
-    Computation* comp;
+    std::vector<char> circleConfiguration;
+    opt_t newSolutionFromCircle;
+    bool haveNewSolutionFromCircle;
+
+    std::vector<char> myConfiguration;
+    opt_t mySolution;
+    bool haveMySolution;
 
     SyncState state;
     pthread_mutex_t stateMutex;
-
 
     // DISABLED
     Synchronization(const Synchronization&) {}
 
 public:
-    Synchronization(Computation* comp);
+    Synchronization(Computation* comp, unsigned int id);
     ~Synchronization();
 
     ///////////// algorithm interface

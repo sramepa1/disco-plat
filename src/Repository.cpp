@@ -138,7 +138,7 @@ pair<AlgoInstance*, Computation*> Repository::getAlgoComp(unsigned int id) {
         istringstream textDataStream(dit->second.second);
         AlgoInstance* algo = AlgoFactory::createAlgoInstance(dit->second.first, textDataStream, comp);
         comp->setAlgorithm(algo);
-        comp->setSync(new Synchronization(comp));
+        comp->setSync(new Synchronization(comp, id));
 
         pair<AlgoInstance*, Computation*> result = make_pair(algo, comp);
         algoCompCache[id] = result;

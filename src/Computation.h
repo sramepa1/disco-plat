@@ -47,12 +47,12 @@ public:
     /**
      * Indicates if a new solution is available and should be extracted by getSolution()
      */
-    bool hasNewSolution() { return hasNewSolution(); }
+    bool hasNewSolution() { return hasNewSolution(); } // TODO fix stack overflow!
 
     /**
      * Extracts the current best known solution. Lowers the "hasNewSolution" flag if it was set.
      */
-    std::pair<opt_t, std::vector<char> > getSolution();
+    std::pair<opt_t, std::vector<char> > getSolution(); // TODO make it two methods please
 
     /**
      * Attempts to split avaliable work for requestCount other nodes.
