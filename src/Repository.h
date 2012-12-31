@@ -27,7 +27,7 @@ public:
 
     void init();
 
-    void start(unsigned int id);
+    void start(unsigned int id, bool localStart);
 
     // frees resources and marks ID as invalid
     void destroy(unsigned int id);

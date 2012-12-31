@@ -33,11 +33,6 @@ public:
     virtual ~Computation();
 
 
-    /*
-     *  WORK IN PROGRESS, THIS WILL LIKELY CHANGE A LOT!
-     */
-
-
     /**
      * Sets current algorithm. Doesn't take ownership.
      */
@@ -52,9 +47,9 @@ public:
     // -------------- Outside world interface -------------------
 
     /**
-     * Wrapper method for the searching algorithm. Executes BB-DFS.
+     * Wrapper method for the searching algorithm. Executes BB-DFS. Requests work first if localStart is false.
      */
-    void start();
+    void start(bool localStart);
 
     /**
      * Indicates if a new solution is available and should be extracted by getSolution()

@@ -44,46 +44,51 @@ void Computation::setSync(Synchronization* sync) {
 }
 
 
-
-void Computation::start() {
+void Computation::start(bool localStart) {
     currentSyncModule = sync;   // TODO: Mutex
 
-    do {
-        DFS();
-    } while(sync->isWorkAvailable());
+    if(!localStart && !sync->isWorkAvailable()) {
+        cout << "Late to the party... Joined a computation where noone wants to share work. Quitting." << endl;
+        return;
+    }
+
+    try {
+
+        do {
+            DFS();
+        } while(sync->isWorkAvailable());
+
+    } catch(AbsoluteSolutionException) {
+        cout << "Absolute solution detected." << endl;
+    }
 
     cout << "Computation finished with the following result:" << endl;
     algo->printConfig(optimalConfig, cout);
 }
 
 void Computation::DFS() {
-    try {
-        loopCounter = 0;
 
-        while(true) {
+    loopCounter = 0;
 
-//            cout << "Trying configuration => ";
-//            algo->printConfig(configStack + stackTop*instanceSize, cout);
+    while(true) {
 
-            if(algo->evaluate()) {
-                algo->expand();
+//          cout << "Trying configuration => ";
+//          algo->printConfig(configStack + stackTop*instanceSize, cout);
 
-            } else {
-                // backtrack
-                if(--stackTop < 0) {
-                    break;
-                }
-            }
+        if(algo->evaluate()) {
+            algo->expand();
 
-            if(++loopCounter >= loopsToSync) {
-                synchronize();
-                loopCounter = 0;
+        } else {
+            // backtrack
+            if(--stackTop < 0) {
+                break;
             }
         }
 
-
-    } catch(AbsoluteSolutionException) {
-        cout << "Absolute solution detected." << endl;
+        if(++loopCounter >= loopsToSync) {
+            synchronize();
+            loopCounter = 0;
+        }
     }
 }
 

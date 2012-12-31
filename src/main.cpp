@@ -119,10 +119,15 @@ int main(int argc, char** argv) {
             computationID = repo->getAnyValidID();
         }
 
+        bool localStart = address == NULL;
+
         do {
-            repo->start(computationID);
+            repo->start(computationID, localStart);
+
+            localStart = false;
             repo->destroy(computationID);
             computationID = repo->getAnyValidID();
+
         } while(computationID != INVALID_COMPUTATION_ID);
 
         // cleanup

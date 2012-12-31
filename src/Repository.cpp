@@ -129,7 +129,7 @@ pair<AlgoInstance*, Computation*> Repository::getAlgoComp(unsigned int id) {
         if(dit == data.end())
         {
             pthread_mutex_unlock(&dataMutex);
-            throw "Requested a algo-computation pair for ID not matching any data in this repository!";
+            throw "Requested an algo-computation pair for ID not matching any data in this repository!";
         }
 
         pthread_mutex_unlock(&dataMutex);
@@ -148,9 +148,9 @@ pair<AlgoInstance*, Computation*> Repository::getAlgoComp(unsigned int id) {
 }
 
 
-void Repository::start(unsigned int id) {
+void Repository::start(unsigned int id, bool localStart) {
     pair<AlgoInstance*, Computation*> algoComp = getAlgoComp(id);
-    algoComp.second->start();
+    algoComp.second->start(localStart);
 }
 
 
