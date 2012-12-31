@@ -146,7 +146,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             cout << "Message type is INSTANCE_ANNOUNCEMENT" << endl;
 #endif
 
-            if(!originMe) {
+        /*    if(!originMe) { */
                 repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
 
                 if(data.slotA == BLOB_SA_IA_INIT_RESUME) {
@@ -156,11 +156,11 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 if(originRightNeighbour) {
                     sendFurther = false;
                 }
-            }
+        //    }
 #ifdef VERBOSE
-            else {
+       /*     else {
                 cout << "Message was sent by myself. Ignoring." << endl;
-            }
+            }*/
 #endif
 
             break;
@@ -195,7 +195,15 @@ void RightNeighbourImpl::BuildNetAndRequestData(const nodeID& newNeighbourID) {
     cout << "Recieved message BuildNetAndRequestData from right neighbour" << endl;
     networkModule->changeRightNeighbour(newNeighbourID);
 
-    // TODO: complete it
+#ifdef VERBOSE
+        cout << "Sending all instance data to right neighbour" << endl;
+#endif
+
+    repo->sendAllData();
+
+#ifdef VERBOSE
+        cout << "Sending data was completed" << endl;
+#endif
 }
 
 

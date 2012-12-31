@@ -30,7 +30,7 @@ Repository::~Repository() {
 
 unsigned int Repository::getFreeID() {
 
-    if(networkModule->getLeftID().identifier == networkModule->getMyID().identifier) {
+    if(isSingleNode()) {
         return maxID++;
     }
 
@@ -82,7 +82,16 @@ void Repository::newData(unsigned int id, std::string algoName, std::string inst
 
     pthread_mutex_unlock(&dataMutex);
 
-    if(broadcast) {
+#ifdef VERBOSE
+    cout << "Adding new instance data: " << instanceText;
+#endif
+
+    if(broadcast && !isSingleNode()) {
+
+#ifdef VERBOSE
+    cout << "Broadcasting new instance";
+#endif
+
         // let the ring know
         blob message;
         message.sourceNode = networkModule->getMyID();
@@ -139,8 +148,14 @@ pair<AlgoInstance*, Computation*> Repository::getAlgoComp(unsigned int id) {
 }
 
 
+void Repository::start(unsigned int id) {
+    pair<AlgoInstance*, Computation*> algoComp = getAlgoComp(id);
+    algoComp.second->start();
+}
+
+
 void Repository::init() {
-    if(networkModule->getLeftID().identifier == networkModule->getMyID().identifier) {
+    if(isSingleNode()) {
         maxID = 1;
         return;
     }
@@ -177,8 +192,29 @@ void Repository::awakeFreeID(unsigned int maxID) {
     pthread_mutex_unlock(&dataMutex);
 }
 
+void Repository::sendAllData() {
+    pthread_mutex_lock(&dataMutex);
 
-void Repository::start(unsigned int id) {
-    pair<AlgoInstance*, Computation*> algoComp = getAlgoComp(id);
-    algoComp.second->start();
+    map<unsigned int, pair<string, string> >::iterator it;
+    for(it = data.begin(); it != data.end(); ++it) {
+
+        blob message;
+        message.sourceNode = networkModule->getRightID(); // intentional hack to stop boomerang propagating
+        message.computationID = it->first;
+        message.messageType = INSTANCE_ANNOUNCEMENT;
+        message.dataStringA = it->second.first.c_str();
+        message.dataStringB = it->second.second.c_str();
+
+        if(++it == data.end()) {
+            message.slotA = BLOB_SA_IA_INIT_RESUME;
+        } else {
+            message.slotA = BLOB_SA_IA_NONE;
+        }
+        --it;
+
+        rightNb->Boomerang(message);
+
+    }
+
+    pthread_mutex_unlock(&dataMutex);
 }

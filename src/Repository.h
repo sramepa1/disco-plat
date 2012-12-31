@@ -38,6 +38,8 @@ public:
 
     unsigned int getMaxID() { return maxID; }
 
+    void sendAllData();
+
 private:
     std::map<unsigned int, std::pair<std::string, std::string> > data;
     std::map<unsigned int, std::pair<AlgoInstance*, Computation*> > algoCompCache;
@@ -54,6 +56,8 @@ private:
     RightNeighbourIface* rightNb;
 
     void waitThread();
+
+    bool isSingleNode() { return networkModule->getLeftID().identifier == networkModule->getMyID().identifier; }
 };
 
 #endif // REPOSITORY_H
