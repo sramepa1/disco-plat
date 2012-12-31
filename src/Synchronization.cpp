@@ -12,7 +12,7 @@ Synchronization::Synchronization(Computation* comp, unsigned int id) : comp(comp
 
     pthread_mutex_init(&stateMutex, NULL);
 
-    haveNewSolutionFromCircle = false;
+    haveNewCirlceSolution = false;
     haveMySolution = false;
 }
 
@@ -26,13 +26,12 @@ void Synchronization::synchronize() {
 
     pthread_mutex_lock(&stateMutex);
     state = SYNCHRONIZING;
-    pthread_mutex_unlock(&stateMutex);
 
     // solution
     bool send;
     bool accept;
 
-    if(haveNewSolutionFromCircle) {
+    if(haveNewCirlceSolution) {
         accept = true;
     } else {
         accept = false;
@@ -40,7 +39,7 @@ void Synchronization::synchronize() {
 
     if(comp->hasNewSolution()) {
         pair<opt_t, vector<char> > tmp = comp->getSolution();
-        mySolution = tmp.first;
+        mySolutionOpt = tmp.first;
         myConfiguration = tmp.second;
 
         haveMySolution = true;
@@ -50,7 +49,7 @@ void Synchronization::synchronize() {
     }
 
     if(accept && haveMySolution) {
-        if(comp->isBetter(mySolution, newSolutionFromCircle)) {
+        if(comp->isBetter(mySolutionOpt, circleSolutionOpt)) {
             accept = false;
         } else {
             send = false;
@@ -60,16 +59,19 @@ void Synchronization::synchronize() {
     if(accept) {
 
 #ifdef VERBOSE
-    cout << "Accepting solution from circle" << endl;
+    cout << "Accepting solution from circle with optimum " << circleSolutionOpt << endl;
 #endif
 
-        comp->setSolution(newSolutionFromCircle, circleConfiguration, false); // TODO how to get is trivial ?
+        comp->setSolution(circleSolutionOpt, circleConfiguration, false); // TODO how to get is trivial ?
+        mySolutionOpt = circleSolutionOpt;
+
+        haveMySolution = true;
     }
 
     if(send) {
 
 #ifdef VERBOSE
-    cout << "Bradcasting my solution" << endl;
+        cout << "Broadcasting my solution with optimum " << mySolutionOpt << endl;
 #endif
 
         // let the ring know
@@ -78,7 +80,7 @@ void Synchronization::synchronize() {
         message.computationID = computationID;
         message.messageType = RESULT;
 
-        message.slotA = (unsigned int) mySolution;
+        message.slotA = (unsigned int) mySolutionOpt;
 
         blob::_charDataSequence_seq data(myConfiguration.size());
         for(unsigned int i = 0; i < myConfiguration.size(); ++i) {
@@ -89,16 +91,17 @@ void Synchronization::synchronize() {
 
         rightNb->Boomerang(message);
 
+        circleSolutionOpt = mySolutionOpt;
     }
 
     // work requests
 
+    //TODO reply to work requests
 
 
     // flags reset
-    haveNewSolutionFromCircle = false;
+    haveNewCirlceSolution = false;
 
-    pthread_mutex_lock(&stateMutex);
     state = WORKING;
     pthread_mutex_unlock(&stateMutex);
 
@@ -132,8 +135,31 @@ void Synchronization::informRequest(disco_plat::nodeID requesteeID) {
 
 }
 
-void Synchronization::informResult(const char* data, int dataLenght) {
+void Synchronization::informResult(unsigned int id, unsigned int optimum, blob::_charDataSequence_seq data) {
+    pthread_mutex_lock(&stateMutex);
 
+    if(id == computationID && comp->isBetter(optimum, circleSolutionOpt)) {
+        vector<char> tmp(data.length());
+        for(unsigned int i = 0; i < data.length(); ++i) {
+            tmp[i] = data[i];
+        }
+
+        circleSolutionOpt = optimum;
+        circleConfiguration = tmp;
+
+        haveNewCirlceSolution = true;
+
+#ifdef VERBOSE
+        cout << "Received accepted for processing" << endl;
+#endif
+    }
+#ifdef VERBOSE
+    else {
+        cout << "Received solution rejected; id is " << id << ", optimum is " << optimum << endl;
+    }
+#endif
+
+    pthread_mutex_unlock(&stateMutex);
 }
 
 

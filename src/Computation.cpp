@@ -95,6 +95,7 @@ void Computation::synchronize() {
 
 pair<opt_t, vector<char> > Computation::getSolution() {
     vector<char> vec(optimalConfig, optimalConfig + instanceSize);
+    newSolutionFound = false;
     return make_pair(optimum, vec);
 }
 

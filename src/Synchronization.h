@@ -22,11 +22,11 @@ class Synchronization
     unsigned int computationID;
 
     std::vector<char> circleConfiguration;
-    opt_t newSolutionFromCircle;
-    bool haveNewSolutionFromCircle;
+    opt_t circleSolutionOpt;
+    bool haveNewCirlceSolution;
 
     std::vector<char> myConfiguration;
-    opt_t mySolution;
+    opt_t mySolutionOpt;
     bool haveMySolution;
 
     SyncState state;
@@ -56,7 +56,7 @@ public:
 
     void informAssignment(const char* data, int dataLenght, unsigned int computationID);
     void informRequest(disco_plat::nodeID requesteeID);
-    void informResult(const char* data, int dataLenght);
+    void informResult(unsigned int id, unsigned int optimum, disco_plat::blob::_charDataSequence_seq data);
     void informTerminate();
 
 };

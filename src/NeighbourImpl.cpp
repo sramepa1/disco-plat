@@ -52,7 +52,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case PING :
 
 #ifdef VERBOSE
-            cout << "Message type is PING" << endl;
+                cout << "Message type is PING" << endl;
 #endif
 
                 break;
@@ -60,7 +60,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case WORK_REQUEST :
 
 #ifdef VERBOSE
-            cout << "Message type is WORK_REQUEST" << endl;
+                cout << "Message type is WORK_REQUEST" << endl;
 #endif
 
                 break;
@@ -68,7 +68,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case WORK_ASSIGNMET :
 
 #ifdef VERBOSE
-            cout << "Message type is WORK_ASSIGNMET" << endl;
+                cout << "Message type is WORK_ASSIGNMET" << endl;
 #endif
 
                 break;
@@ -76,17 +76,21 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case RESULT : 
 
 #ifdef VERBOSE
-            cout << "Message type is RESULT" << endl;
+                cout << "Message type is RESULT" << endl;
 #endif
 
-            //currentSyncModule->informResult(data.charDataSequence.get_buffer(), data.data.length());
+                currentSyncModule->informResult(data.computationID, data.slotA, data.charDataSequence);
+
+                if(originRightNeighbour) {
+                    sendFurther = false;
+                }
 
                 break;
 
             case TERMINATION_TOKEN :
 
 #ifdef VERBOSE
-            cout << "Message type is TERMINATION_TOKEN" << endl;
+                cout << "Message type is TERMINATION_TOKEN" << endl;
 #endif
 
                 break;
@@ -94,7 +98,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case TERMINATE :
 
 #ifdef VERBOSE
-            cout << "Message type is TERMINATE" << endl;
+                cout << "Message type is TERMINATE" << endl;
 #endif
 
                 currentSyncModule->informTerminate();
