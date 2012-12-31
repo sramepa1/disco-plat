@@ -189,6 +189,11 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 }
 
 
+void LeftNeighbourImpl::AbortingBoomerang() {
+    cout << "Recieved message AbortingBoomerang from left neighbour" << endl;
+    networkModule->getMyRightInterface().AbortingBoomerang();
+}
+
 /*****************************************************************/
 //  RightNeighbour
 
@@ -210,7 +215,7 @@ void RightNeighbourImpl::BuildNetAndRequestData(const nodeID& newNeighbourID) {
 
 void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, const nodeID& deadNodeID) {
     cout << "Recieved message NodeDied from right neighbour" << endl;
-    networkModule->setReportNodeID(reportingNodeID);
+    networkModule->setDeadNodeID(reportingNodeID, deadNodeID);
 
     // TODO: check if I gave work to dead node
 
@@ -220,6 +225,7 @@ void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, const nodeID& d
 
 void RightNeighbourImpl::RebuildNetwork(const nodeID& newNeighbourID) {
     cout << "Recieved message RebuildNetwork from right neighbour" << endl;
+    networkModule->cleanQueue();
     networkModule->changeRightNeighbour(newNeighbourID);
     networkModule->repairNetwork();
 }

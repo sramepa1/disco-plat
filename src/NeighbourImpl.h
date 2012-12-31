@@ -8,6 +8,7 @@ class LeftNeighbourImpl : virtual public POA_disco_plat::LeftNeighbour {
 public:
     virtual void ConnectAsLeftNode(const ::disco_plat::nodeID& newNodeID, ::disco_plat::nodeID_out oldLeftNodeID);
     virtual void Boomerang(const ::disco_plat::blob& data);
+    virtual void AbortingBoomerang();
 };
 
 class RightNeighbourImpl : virtual public POA_disco_plat::RightNeighbour {

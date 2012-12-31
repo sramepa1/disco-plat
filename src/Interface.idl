@@ -46,6 +46,9 @@ interface LeftNeighbour {
     // General boomerang token sending a regular service data. This token shall run clockwise only.
     void Boomerang(in blob data);
 
+    // When the Fail is so strong, the standard boomerang is not enough
+    void AbortingBoomerang();
+
 };
 
 

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
+#include <typeinfo>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -221,6 +222,10 @@ void* Network::sendThreadMain(void* ptr) {
     while(instance->sendThreadRunning) {
         usleep(100000);
 
+        if(instance->networkBroken) {
+            continue;
+        }
+
         pthread_mutex_lock(&instance->queueMutex);
         queueIsEmpty = instance->sendQueue.empty();
         pthread_mutex_unlock(&instance->queueMutex);
@@ -261,6 +266,13 @@ void* Network::sendThreadMain(void* ptr) {
             }
             pthread_mutex_unlock(&instance->bindMutex);
 mutexJump:
+            if(instance->networkBroken) {
+                pthread_mutex_lock(&instance->queueMutex);
+                instance->sendQueue.push_front(current);
+                pthread_mutex_unlock(&instance->queueMutex);
+                break;
+            }
+
             delete current;
 
             pthread_mutex_lock(&instance->queueMutex);
@@ -312,6 +324,11 @@ void Network::reportDeadLeftNode() {
 
     pthread_mutex_lock(&bindMutex);
     try {
+
+        if(leftID.identifier != deadNodeID.identifier) {
+            throw "EPIC Fail!!!";
+        }
+
         CORBA::Object_var tempObj;
         leftID = reportNodeID;
         BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)reportNodeID.identifier, leftRemoteObject,
@@ -319,8 +336,7 @@ void Network::reportDeadLeftNode() {
 
         leftRemoteObject->RebuildNetwork(myID);
     } catch(...) {
-        pthread_mutex_unlock(&bindMutex);
-        throw;
+        sendBoomerangAndAbort(rightRemoteObject);
     }
     pthread_mutex_unlock(&bindMutex);
 
@@ -333,7 +349,34 @@ void Network::reportDeadRightNode() {
             leftRemoteObject->NodeDied(getMyID(), getRightID());
             networkBroken = true;
         } catch(CORBA::COMM_FAILURE&) {
+            if(leftID.identifier != rightID.identifier) {
+                sendBoomerangAndAbort(rightRemoteObject);
+            }
+
+            cleanQueue();
             createSingleNodeNetworkWithMutex();
         }
     }
+}
+
+void Network::cleanQueue() {
+    pthread_mutex_lock(&queueMutex);
+
+    QueueItem* current;
+    for(unsigned i = 0; i < sendQueue.size(); ++i) {
+        current = sendQueue.front();
+        sendQueue.pop_front();
+
+        if(typeid(*current) == typeid(Right_Boomerang)) {
+            Right_Boomerang* boomerang = (Right_Boomerang*)current;
+            if(boomerang->data.sourceNode.identifier == rightID.identifier) {
+                delete current;
+                continue;
+            }
+        }
+
+        sendQueue.push_back(current);
+    }
+
+    pthread_mutex_unlock(&queueMutex);
 }

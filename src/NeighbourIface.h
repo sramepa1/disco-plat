@@ -14,9 +14,6 @@ public:
     void NeighbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID) {
         parent->enqueItem(new Left_NodeDied(reportingNodeID, deadNodeID));
     }
-    void RebuildNetwork(const ::disco_plat::nodeID& newNeighbourID) {
-        parent->enqueItem(new Left_RebuildNetwork(newNeighbourID));
-    }
 };
 
 class RightNeighbourIface {
@@ -28,6 +25,9 @@ class RightNeighbourIface {
 public:
     void Boomerang(const ::disco_plat::blob& data) {
         parent->enqueItem(new Right_Boomerang(data));
+    }
+    void AbortingBoomerang() {
+        parent->enqueItem(new Right_AbortingBoomerang());
     }
 };
 
