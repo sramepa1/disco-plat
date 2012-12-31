@@ -112,6 +112,7 @@ vector<char*> Computation::splitWork(int requestCount) {
 void Computation::setWork(const char* configStack, const std::pair<int,int> * intervalStack, int depth) {
     /*TODO: implement*/
     algo->dataChanged();
+    newSolutionFound = false;
 }
 
 
