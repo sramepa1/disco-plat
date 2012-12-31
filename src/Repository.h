@@ -34,11 +34,9 @@ public:
     ///////// interface for calling from networ init only
 
     void awakeInit();
-    void awakeFreeID();
+    void awakeFreeID(unsigned int maxID);
 
     unsigned int getMaxID() { return maxID; }
-    void setMaxID(unsigned int maxID) { this->maxID = maxID; }
-
 
 private:
     std::map<unsigned int, std::pair<std::string, std::string> > data;

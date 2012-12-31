@@ -53,7 +53,7 @@ unsigned int Repository::getFreeID() {
     pthread_mutex_unlock(&dataMutex);
 
 
-    return ++maxID;
+    return maxID;
 }
 
 unsigned int Repository::getAnyValidID() {
@@ -166,10 +166,11 @@ void Repository::awakeInit() {
 }
 
 
-void Repository::awakeFreeID() {
+void Repository::awakeFreeID(unsigned int maxID) {
     pthread_mutex_lock(&dataMutex);
 
     if(isFreeIDSleeping) {
+        this->maxID = maxID + 1;
         pthread_cond_signal(&initCondition);
     }
 

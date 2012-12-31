@@ -50,25 +50,52 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
         switch(data.messageType) {
             case PING :
+
+#ifdef VERBOSE
+            cout << "Message type is PING" << endl;
+#endif
+
                 break;
 
             case WORK_REQUEST :
+
+#ifdef VERBOSE
+            cout << "Message type is WORK_REQUEST" << endl;
+#endif
 
                 break;
 
             case WORK_ASSIGNMET :
 
+#ifdef VERBOSE
+            cout << "Message type is WORK_ASSIGNMET" << endl;
+#endif
+
                 break;
 
             case RESULT :
                 //currentSyncModule->informResult(data.charDataSequence .get_buffer(), data.data.length());
+
+#ifdef VERBOSE
+            cout << "Message type is RESULT" << endl;
+#endif
+
                 break;
 
             case TERMINATION_TOKEN :
 
+#ifdef VERBOSE
+            cout << "Message type is TERMINATION_TOKEN" << endl;
+#endif
+
                 break;
 
             case TERMINATE :
+
+#ifdef VERBOSE
+            cout << "Message type is TERMINATE" << endl;
+#endif
+
                 currentSyncModule->informTerminate();
                 break;
 
@@ -82,15 +109,27 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
     switch(data.messageType) {
 
         case TERMINATE :
-            if(currentSyncModule == NULL) exit(ERR_COMMAND_TERMINATE);
+
+#ifdef VERBOSE
+            cout << "Message type is TERMINATE" << endl;
+#endif
+
+            if(currentSyncModule == NULL) {
+                cout << "Recieved TERMINATE command when not yet fully initialized. Hard exit process." << endl;
+                exit(ERR_COMMAND_TERMINATE);
+            }
+
             break;
 
         case FREE_ID_SEARCH :
 
+#ifdef VERBOSE
+            cout << "Message type is FREE_ID_SEARCH" << endl;
+#endif
+
             if(originMe) {
                 //wake repository
-                repo->setMaxID(data.slotA);
-                repo->awakeFreeID();
+                repo->awakeFreeID(data.slotA);
 
             } else {
                 //change to my maxID if greater
@@ -103,6 +142,10 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
         case INSTANCE_ANNOUNCEMENT :
 
+#ifdef VERBOSE
+            cout << "Message type is INSTANCE_ANNOUNCEMENT" << endl;
+#endif
+
             if(!originMe) {
                 repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
 
@@ -114,6 +157,11 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                     sendFurther = false;
                 }
             }
+#ifdef VERBOSE
+            else {
+                cout << "Message was sent by myself. Ignoring." << endl;
+            }
+#endif
 
             break;
 
@@ -125,8 +173,18 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
     if(sendFurther) {
         RightNeighbourIface& right = networkModule->getMyRightInterface();
         right.Boomerang(myData);
-        cout << "Sent message Boomerang to right neighbour" << endl;
+
+#ifdef VERBOSE
+        cout << "Boomerang was sent to right neighbour" << endl;
+#endif
+
     }
+#ifdef VERBOSE
+    else {
+        cout << "Boomerang ends here. No sending." << endl;
+    }
+#endif
+
 }
 
 

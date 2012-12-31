@@ -1,4 +1,4 @@
-CPPFLAGS      = -Wall -pedantic -O0 -g -Ibuild
+CPPFLAGS      = -Wall -pedantic -O0 -g -Ibuild -DVERBOSE
 LDFLAGS       = -g
 LIBS          = -lmico2.3.13 -lpthread -ldl -lssl -lcrypto -lz
 
