@@ -52,7 +52,7 @@ public:
     /**
      * Extracts the current best known solution. Lowers the "hasNewSolution" flag if it was set.
      */
-    std::pair<opt_t, std::vector<char> > getSolution(); // TODO make it two methods please
+    std::pair<opt_t, std::vector<char> > getSolution();
 
     /**
      * Attempts to split avaliable work for requestCount other nodes.
