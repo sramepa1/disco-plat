@@ -15,6 +15,8 @@
 #include "../build/Interface.h"
 #include "NeighbourIface.h"
 #include "NeighbourImpl.h"
+#include "Synchronization.h"
+#include "globals.h"
 
 using namespace std;
 using namespace disco_plat;
@@ -353,11 +355,16 @@ void Network::reportDeadLeftNode() {
 void Network::reportDeadRightNode() {
     if(!networkBroken) {
         try {
-            SequenceTmpl<nodeID, MICO_TID_DEF> newSequence;
-            newSequence.length(1);
-            newSequence[0] = myID;
+            SequenceTmpl<nodeID, MICO_TID_DEF> newNodeSequence;
+            SequenceTmpl<ULong, MICO_TID_DEF> newCompSequence;
 
-            leftRemoteObject->NodeDied(getMyID(), newSequence);
+            newNodeSequence.length(1);
+            newCompSequence.length(1);
+
+            newNodeSequence[0] = myID;
+            newCompSequence[0] = currentSyncModule->getComputationID();
+
+            leftRemoteObject->NodeDied(getMyID(), newNodeSequence, newCompSequence);
             networkBroken = true;
         } catch(COMM_FAILURE&) {
             // I am alone...

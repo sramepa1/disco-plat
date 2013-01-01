@@ -47,6 +47,7 @@ class Network {
     void reportDeadRightNode();
 
     SequenceTmpl<disco_plat::nodeID, MICO_TID_DEF> liveNodes;
+    SequenceTmpl<CORBA::ULong, MICO_TID_DEF> liveCompIDs;
     disco_plat::nodeID reportNodeID;
     bool networkBroken;
 
@@ -70,10 +71,12 @@ public:
     void changeLeftNeighbour(const disco_plat::nodeID& newID);
 
     void repairNetwork() { networkBroken = false; }     // It's so simple... :-)
-    void setDataForRebuilding(disco_plat::nodeID reportNodeID,
-                              SequenceTmpl<disco_plat::nodeID, MICO_TID_DEF> liveNodes) {
+    void setDataForRebuilding(const disco_plat::nodeID& reportNodeID,
+                              const SequenceTmpl<disco_plat::nodeID, MICO_TID_DEF>& liveNodes,
+                              const SequenceTmpl<CORBA::ULong, MICO_TID_DEF>& liveCompIDs) {
         this->reportNodeID = reportNodeID;
         this->liveNodes = liveNodes;
+        this->liveCompIDs = liveCompIDs;
     }
 
 private:
