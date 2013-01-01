@@ -16,7 +16,7 @@ Computation::Computation() :    algo(NULL), sync(NULL),
                                 stackTop(0), maxStackSize(0),
                                 optimum(0), optimalConfig(NULL),
                                 newSolutionFound(false), absoluteSolution(false), workSplitPossible(true),
-                                loopCounter(0), loopsToSync(3000000)
+                                loopCounter(0), loopsToSync(500000)
 {
     timestamp = areWeThereYet();
 }
@@ -102,17 +102,19 @@ void Computation::synchronize() {
     uint64_t now = areWeThereYet();
     uint64_t delta = now - timestamp;
     timestamp = now;
-    if(delta < 300) {
+    if(delta < 50) {
         #ifdef VERBOSE
-        cout << "Adaptive loop delta was too low: " << delta << ", doubling loop counter" << endl;
+        cout << "Adaptive loop delta was too low: " << delta << ", increasing loop counter" << endl;
         #endif
-        loopsToSync *= 2;
-    }
-    if(delta > 1000) {
-        #ifdef VERBOSE
-        cout << "Adaptive loop delta was too high: " << delta << ", halving loop counter" << endl;
-        #endif
+        loopsToSync *= 3;
         loopsToSync /= 2;
+    }
+    if(delta > 300) {
+        #ifdef VERBOSE
+        cout << "Adaptive loop delta was too high: " << delta << ", decreasing loop counter" << endl;
+        #endif
+        loopsToSync /= 3;
+        loopsToSync *= 2;
     }
 
     sync->synchronize();
@@ -157,8 +159,7 @@ bool Computation::splitWork(WorkUnit& work) {
         int branchCount = right - left;
 
         if(branchCount >= 2) {
-            int amountToGive = (int)((double)branchCount * 0.707106781187);
-                                // 1/sqrt(2) should lead to 2 roughly area-equivalent state space slices
+            int amountToGive = (int)((double)branchCount * 0.9); // Bulgarian constant rulez
             int cut = right - amountToGive;
 
             work.intervalStackVector.push_back(cut);
@@ -210,7 +211,7 @@ void Computation::setWork(WorkUnit& work) {
 void Computation::setSolution(opt_t optimum, vector<char> configuration, bool isAbsolute) {
     this->optimum = optimum;
 
-    if(configuration.size() != instanceSize) {
+    if(configuration.size() != (size_t)instanceSize) {
         throw "Attempted to set a configuration of wrong size as the current solution!";
     }
 
