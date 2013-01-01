@@ -115,12 +115,12 @@ void Synchronization::synchronize() {
             message.slotA = unit.depth;
             message.slotB = unit.instanceSize;
 
-            message.charDataSequence = blob::_charDataSequence_seq(unit.configStackVector.size());
+            message.charDataSequence.length(unit.configStackVector.size());
             for(unsigned int i = 0; i < unit.configStackVector.size(); ++i) {
                 message.charDataSequence[i] = unit.configStackVector[i];
             }
 
-            message.longDataSequence = blob::_longDataSequence_seq(unit.intervalStackVector.size());
+            message.longDataSequence.length(unit.intervalStackVector.size());
             for(unsigned int i = 0; i < unit.intervalStackVector.size(); ++i) {
                 message.longDataSequence[i] = unit.intervalStackVector[i];
             }
@@ -158,6 +158,10 @@ void Synchronization::synchronize() {
 
 bool Synchronization::isWorkAvailable() {
 
+#ifdef VERBOSE
+    cout << "I have nothing to do ... Requesting some work" << endl;
+#endif
+
     pthread_mutex_lock(&stateMutex);
     isWorkingState = false;
     pthread_mutex_unlock(&stateMutex);
@@ -184,8 +188,16 @@ bool Synchronization::isWorkAvailable() {
         isWorkingState = true;
         pthread_mutex_unlock(&stateMutex);
 
+#ifdef VERBOSE
+    cout << "... Arbeit macht frei!!!" << endl;
+#endif
+
         return true;
     }
+
+#ifdef VERBOSE
+    cout << "Initiating termination protocol" << endl;
+#endif
 
     // TODO tokens and termination detection
     throw "TODO implement termination - work request rejected.";
@@ -207,6 +219,10 @@ void Synchronization::informAssignment(blob data) {
 
     comp->setWork(unit);
 
+#ifdef VERBOSE
+    cout << "Accepting assigned WORK from " << data.sourceNode.identifier << endl;
+#endif
+
     workReciewed = true;
     pthread_cond_signal(&idleCondition);
 
@@ -215,6 +231,10 @@ void Synchronization::informAssignment(blob data) {
 
 void Synchronization::informNoAssignment() {
     pthread_mutex_lock(&syncMutex);
+
+#ifdef VERBOSE
+    cout << "WORK request declined" << endl;
+#endif
 
     workReciewed = false;
     pthread_cond_signal(&idleCondition);

@@ -94,7 +94,10 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 // TODO recovery and cache
 
                 if(data.asignee.identifier == networkModule->getMyID().identifier) {
-                    //currentSyncModule->informAssignment();
+                    currentSyncModule->informAssignment(data);
+#ifdef VERBOSE
+                    cout << "Message WORK_ASSIGNMET accepted for processing" << endl;
+#endif
                 }
 
                 break;
