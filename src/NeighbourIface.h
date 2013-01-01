@@ -12,8 +12,9 @@ class LeftNeighbourIface {
 
 public:
     void NeighbourDied(const ::disco_plat::nodeID& reportingNodeID,
-                       const SequenceTmpl< ::disco_plat::nodeID, MICO_TID_DEF> liveNodes) {
-        parent->enqueItem(new Left_NodeDied(reportingNodeID, liveNodes));
+                       const SequenceTmpl< ::disco_plat::nodeID, MICO_TID_DEF>& liveNodes,
+                       const SequenceTmpl<CORBA::ULong,MICO_TID_DEF>& compIDs) {
+        parent->enqueItem(new Left_NodeDied(reportingNodeID, liveNodes, compIDs));
     }
 };
 

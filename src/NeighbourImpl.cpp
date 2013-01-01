@@ -10,6 +10,7 @@
 
 using namespace std;
 using namespace disco_plat;
+using namespace CORBA;
 
 
 /*****************************************************************/
@@ -265,18 +266,24 @@ void RightNeighbourImpl::BuildNetAndRequestData(const nodeID& newNeighbourID) {
 }
 
 
-void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, SequenceTmpl<nodeID, MICO_TID_DEF> liveNodes) {
+void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, SequenceTmpl<nodeID, MICO_TID_DEF> liveNodes,
+                                  SequenceTmpl<ULong, MICO_TID_DEF> compIDs) {
+
     cout << "Recieved message NodeDied from right neighbour" << endl;
-    SequenceTmpl<nodeID, MICO_TID_DEF> newSequence;
-    newSequence.length(liveNodes.length() + 1);
+    SequenceTmpl<nodeID, MICO_TID_DEF> newNodeSequence;
+    SequenceTmpl<ULong, MICO_TID_DEF> newCompSequence;
+    newNodeSequence.length(liveNodes.length() + 1);
+    newCompSequence.length(liveNodes.length() + 1);
 
     for(unsigned i = 0; i < liveNodes.length(); ++i) {
-        newSequence[i] = liveNodes[i];
+        newNodeSequence[i] = liveNodes[i];
+        newCompSequence[i] = compIDs[i];
     }
-    newSequence[liveNodes.length()] = networkModule->getMyID();
+    newNodeSequence[liveNodes.length()] = networkModule->getMyID();
+    newCompSequence[liveNodes.length()] = currentSyncModule->getComputationID();
 
-    networkModule->setDataForRebuilding(reportingNodeID, newSequence);
-    networkModule->getMyLeftInterface().NeighbourDied(reportingNodeID, newSequence);
+    networkModule->setDataForRebuilding(reportingNodeID, newNodeSequence, newCompSequence);
+    networkModule->getMyLeftInterface().NeighbourDied(reportingNodeID, newNodeSequence, newCompSequence);
 }
 
 
