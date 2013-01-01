@@ -354,7 +354,7 @@ void Network::reportDeadLeftNode() {
         for(unsigned i = 0; i < liveCompIDs.length(); ++i) {
             compIDSet.insert(liveCompIDs[i]);
         }
-        //repo->setSurvivingComputations(compIDSet);
+        repo->setSurvivingComputations(compIDSet);
 
         blob data;
         data.sourceNode = myID;
@@ -393,7 +393,7 @@ void Network::reportDeadRightNode() {
 
             set<unsigned> compIDSet;
             compIDSet.insert(currentSyncModule->getComputationID());
-            //repo->setSurvivingComputations(compIDSet);
+            repo->setSurvivingComputations(compIDSet);
 
             createSingleNodeNetworkWithMutex();
         }

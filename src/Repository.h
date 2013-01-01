@@ -38,17 +38,19 @@ public:
     void destroyComputation(unsigned int id);
 
     // destroys all computations not present in the given set (zombie-killing)
-    void setSurvivingComputations(std::set<unsigned int> computationIDs);
+    void setSurvivingComputations(const std::set<unsigned int>& computationIDs);
 
 
     ///////// Node liveness and work cache
 
-    bool isAlive(std::string& identifier);
+    size_t getLiveNodeCount() { return liveNodes.size(); }
 
-    void addLiveNode(std::string& identifier);
+    bool isAlive(const std::string& identifier);
+
+    void addLiveNode(const std::string &identifier);
 
     // Can be changed to CORBA sequence<string> if needed
-    void setLiveNodes(std::set<std::string>& liveNodes);
+    void setLiveNodes(const std::set<std::string>& liveNodes);
 
 
 

@@ -107,7 +107,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
                 break;
 
-            case RESULT : 
+            case RESULT :
 
 #ifdef VERBOSE
                 cout << "Message type is RESULT" << endl;
@@ -176,7 +176,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 for(unsigned i = 0; i < data.longDataSequence.length(); ++i) {
                     compIDSet.insert(data.longDataSequence[i]);
                 }
-                //repo->setSurvivingComputations(compIDSet);
+                repo->setSurvivingComputations(compIDSet);
 
                 break;
             }

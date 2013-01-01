@@ -45,6 +45,10 @@ Repository::~Repository() {
     pthread_mutex_destroy(&dataMutex);
     pthread_mutex_destroy(&livenessMutex);
     pthread_cond_destroy(&initCondition);
+
+    if(isOutStreamOwner) {
+        delete outStream;
+    }
 }
 
 unsigned int Repository::getFreeID() {
@@ -137,12 +141,12 @@ void Repository::destroyComputation(unsigned int id) {
 }
 
 
-void Repository::setSurvivingComputations(set<unsigned int> computationIDs) {
+void Repository::setSurvivingComputations(const set<unsigned int>& computationIDs) {
     pthread_mutex_lock(&dataMutex);
 
     map<unsigned int, pair<string, string> >::iterator it = data.begin();
     while(it != data.end()) {
-        if(computationIDs.find(it->first) != computationIDs.end()) {
+        if(computationIDs.find(it->first) == computationIDs.end()) {
             destroyInternal((it++)->first); // post-increment required as the iterator will be invalidated!
         }
     }
@@ -314,23 +318,23 @@ void Repository::broadcastMyID() {
 }
 
 
-bool Repository::isAlive(string& identifier) {
+bool Repository::isAlive(const string& identifier) {
     pthread_mutex_lock(&livenessMutex);
     bool result = liveNodes.find(identifier) != liveNodes.end();
     pthread_mutex_unlock(&livenessMutex);
     return result;
 }
 
-void Repository::addLiveNode(string& identifier) {
+void Repository::addLiveNode(const string& identifier) {
     pthread_mutex_lock(&livenessMutex);
 #ifdef VERBOSE
-    cout << "Adding new allive node: " << identifier << endl;
+    cout << "Adding new living node: " << identifier << endl;
 #endif
     liveNodes.insert(identifier);
     pthread_mutex_unlock(&livenessMutex);
 }
 
-void Repository::setLiveNodes(set<string>& liveNodes) {
+void Repository::setLiveNodes(const set<string>& liveNodes) {
     pthread_mutex_lock(&livenessMutex);
     this->liveNodes = liveNodes;
     pthread_mutex_unlock(&livenessMutex);
