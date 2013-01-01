@@ -100,6 +100,10 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 #endif
                 }
 
+                if(originRightNeighbour) {
+                    sendFurther = false;
+                }
+
                 break;
 
             case RESULT : 

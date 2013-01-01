@@ -30,9 +30,9 @@ class Synchronization
     opt_t mySolutionOpt;
     bool haveMySolution;
 
-    SyncState state;
-    bool isWorkingState;
+    struct WorkUnit unit;
 
+    bool isWorkingState;
     bool workReciewed;
     bool splitSuccesful;
 

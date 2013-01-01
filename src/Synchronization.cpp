@@ -101,8 +101,6 @@ void Synchronization::synchronize() {
 
     // work requests
     while(!workRequests.empty()) {
-        struct WorkUnit unit;
-
         if(splitSuccesful && comp->splitWork(unit)) {
             blob message;
             message.sourceNode = networkModule->getMyID();
@@ -189,7 +187,7 @@ bool Synchronization::isWorkAvailable() {
         pthread_mutex_unlock(&stateMutex);
 
 #ifdef VERBOSE
-    cout << "... Arbeit macht frei!!!" << endl;
+    cout << "Working thread awaken" << endl;
 #endif
 
         return true;
@@ -211,7 +209,6 @@ bool Synchronization::isWorkAvailable() {
 void Synchronization::informAssignment(blob data) {
     pthread_mutex_lock(&syncMutex);
 
-    struct WorkUnit unit;
     unit.depth = data.slotA;
     unit.instanceSize = data.slotB;
     unit.configStackVector =  vector<char>(data.charDataSequence.get_buffer(), data.charDataSequence.get_buffer() + data.charDataSequence.length());
