@@ -1,6 +1,8 @@
 #include "Computation.h"
 #include "Synchronization.h"
 #include "Algo.h"
+#include "globals.h"
+#include "Repository.h"
 
 extern "C" {
 #include <string.h>
@@ -23,6 +25,7 @@ Computation::Computation() :    algo(NULL), sync(NULL),
 
 Computation::~Computation() {
     deallocateAll();
+    delete sync;
 }
 
 uint64_t Computation::areWeThereYet() {
@@ -45,13 +48,10 @@ void Computation::setSync(Synchronization* sync) {
 
 
 void Computation::start(bool localStart) {
-    currentSyncModule = sync;
-
-    cout << (localStart ? "Initiating" : "Joining") << " computation " << sync->getComputationID() << endl;
+    repo->getOutput() << (localStart ? "Initiating" : "Joining") << " computation " << sync->getComputationID() << endl;
 
     if(!localStart && !sync->isWorkAvailable()) {
         cout << "Late to the party... Joined a computation where noone wants to share work. Quitting." << endl;
-        currentSyncModule = NULL;
         return;
     }
 
@@ -65,10 +65,8 @@ void Computation::start(bool localStart) {
         cout << "Absolute solution detected." << endl;
     }
 
-    cout << "Computation " << sync->getComputationID() << " finished with the following result:" << endl;
-    algo->printConfig(optimalConfig, cout);
-
-    currentSyncModule = NULL;
+    repo->getOutput() << "Computation " << sync->getComputationID() << " finished with the following result:" << endl;
+    algo->printConfig(optimalConfig, repo->getOutput());
 }
 
 void Computation::DFS() {

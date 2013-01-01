@@ -8,6 +8,8 @@
 #include <list>
 #include <pthread.h>
 #include <vector>
+#include <map>
+#include <string>
 
 
 #define BLACK false
@@ -42,6 +44,7 @@ class Synchronization
     bool splitSuccesful;
 
     std::list<disco_plat::nodeID> workRequests;
+    std::map<std::string, WorkUnit> workAssignments;
 
     typedef bool color;
     color myColor;
@@ -57,7 +60,6 @@ class Synchronization
     pthread_mutex_t stateMutex;
     pthread_mutex_t syncMutex;
     pthread_cond_t idleCondition;
-
 
 
     void sendTerminationToken();
@@ -93,6 +95,10 @@ public:
     void informAssignment(disco_plat::blob data);
     void informNoAssignment();
     void informRequest(disco_plat::nodeID requesteeID);
+
+    // TODO: Lamport timestamps?
+    // Pass empty string as originalOwner if this is not a de-zombification update
+    void updateWorkCache(std::string& identifier, WorkUnit& work, std::string& originalOwner);
 
     void informResult(disco_plat::blob data);
 

@@ -5,6 +5,8 @@
 #include "Repository.h"
 #include "Synchronization.h"
 
+#include <iostream>
+#include <fstream>
 #include <sstream>
 #include <cstdlib>
 #include <ctime>
@@ -14,7 +16,7 @@ using namespace disco_plat;
 
 Repository* repo;
 
-Repository::Repository() {
+Repository::Repository(string outputFileName) {
     leftNb = &networkModule->getMyLeftInterface();
     rightNb = &networkModule->getMyRightInterface();
 
@@ -24,6 +26,17 @@ Repository::Repository() {
 
     isInitSleeping = false;
     isFreeIDSleeping = false;
+
+    if(outputFileName.empty()) {
+        outStream = &cout;
+        isOutStreamOwner = false;
+    } else {
+        outStream = new ofstream(outputFileName.c_str(), ios_base::app);
+        isOutStreamOwner = true;
+        if(!outStream->good()) {
+            throw (string("Unable to open file \"") + outputFileName + "\" for output!").c_str();
+        }
+    }
 
     srand(time(NULL));
 }
@@ -180,7 +193,9 @@ pair<AlgoInstance*, Computation*> Repository::getAlgoComp(unsigned int id) {
 
 void Repository::startComputation(unsigned int id, bool localStart) {
     pair<AlgoInstance*, Computation*> algoComp = getAlgoComp(id);
+    currentSyncModule = algoComp.second->getSync(); // TODO: replace with a mutexed setter in networkModule
     algoComp.second->start(localStart);
+    currentSyncModule = NULL;
 }
 
 
@@ -318,15 +333,5 @@ void Repository::addLiveNode(string& identifier) {
 void Repository::setLiveNodes(set<string>& liveNodes) {
     pthread_mutex_lock(&livenessMutex);
     this->liveNodes = liveNodes;
-    pthread_mutex_unlock(&livenessMutex);
-}
-
-// TODO: Lamport timestamps?
-void Repository::updateWorkCache(string& identifier, WorkUnit& work, string& originalOwner) {
-    pthread_mutex_lock(&livenessMutex);
-    if(originalOwner.empty()) {
-        assignedWork.erase(originalOwner);  // De-zombify
-    }
-    assignedWork[identifier] = work;
     pthread_mutex_unlock(&livenessMutex);
 }

@@ -28,12 +28,20 @@ static struct option long_options[] = {
     {"address", 1, 0, 'a'},
     {"name", 1, 0, 'n'},
     {"file", 1, 0, 'f'},
+    {"output", 1, 0, 'o'},
     {NULL, 0, NULL, 0}
 };
 
-void startNetwork(int port, const char* networkInterface, const char* algorithm, const char* address) {
+void initEnvironment(int port, const char* networkInterface, const char* algorithm,
+                     const char* address, const char* outFile) {
+
+    #ifdef VERBOSE
+    cout << "Initializing network module with port " << port << ", interface '" << networkInterface
+         << "' and address '" << (address == NULL ? "NULL" : address) << "'" << endl;
+    #endif
+
     networkModule = new Network(port, networkInterface, algorithm);
-    repo = new Repository();
+    repo = new Repository(outFile);
     networkModule->start(address);
     repo->init();
 }
@@ -51,11 +59,12 @@ int main(int argc, char** argv) {
     const char* address = NULL;
     const char* name = "ham0";
     const char* file = NULL;
+    const char* output = "";
 
     int character;
     int option_index = 0;
 
-    while ((character = getopt_long(argc, argv, "p:a:n:f:", long_options, &option_index)) != -1) {
+    while ((character = getopt_long(argc, argv, "p:a:n:f:o:", long_options, &option_index)) != -1) {
         switch (character) {
             case 'p' :
                 port = atoi(optarg);
@@ -73,14 +82,15 @@ int main(int argc, char** argv) {
                 file = strdup(optarg);
                 break;
 
+            case 'o' :
+                output = strdup(optarg);
+                break;
+
             default:
                 cerr << USAGE_INFO << endl;
                 return ERR_INVALID_ARGUMENTS;
         }
     }
-
-    cout << "Initializing network module with port " << port << ", name '" << name << "' and address '"
-         << (address == NULL ? "NULL" : address) << "'" << endl;
 
     AlgoFactory::registerAlgorithm("Knapsack", &Knapsack::knapsackConstructor);
 
@@ -100,7 +110,7 @@ int main(int argc, char** argv) {
                 throw (string("Error reading file ") + file).c_str();
             }
 
-            startNetwork(port, name, algoName.c_str(), address);
+            initEnvironment(port, name, algoName.c_str(), address, output);
 
             computationID = repo->getFreeID();
             repo->newData(computationID, algoName,
@@ -115,7 +125,7 @@ int main(int argc, char** argv) {
                 throw "Cannot start with neither an address to join nor an instance file!";
             }
 
-            startNetwork(port, name, "", address);
+            initEnvironment(port, name, "", address, output);
             computationID = repo->getAnyValidID();
         }
 

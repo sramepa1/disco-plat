@@ -39,9 +39,14 @@ public:
     void setAlgorithm(AlgoInstance* algo);
 
     /**
-     * Sets current sync. Doesn't take ownership.
+     * Sets current sync. Takes ownership.
      */
     void setSync(Synchronization* sync);
+
+    /**
+     * Gets this computation's synchronizer
+     */
+    Synchronization* getSync() { return sync; }
 
 
     // -------------- Outside world interface -------------------

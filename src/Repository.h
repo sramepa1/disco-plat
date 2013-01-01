@@ -9,16 +9,19 @@
 #include <set>
 #include <pthread.h>
 #include <string>
+#include <ostream>
 
 #define INVALID_COMPUTATION_ID 0
 
 class Repository
 {
 public:
-    Repository();
+    Repository(std::string outputFileName);
     ~Repository();
 
     void init();
+
+    std::ostream& getOutput() { return *outStream; }
 
     ///////// ID and computation data
 
@@ -48,9 +51,6 @@ public:
     void setLiveNodes(std::set<std::string>& liveNodes);
 
 
-    // TODO: Lamport timestamps?
-    // Pass empty string as originalOwner if this is not a de-zombification update
-    void updateWorkCache(std::string& identifier, WorkUnit& work, std::string& originalOwner);
 
     ///////// interface for calling from networ init only
 
@@ -67,7 +67,6 @@ private:
     std::map<unsigned int, std::pair<AlgoInstance*, Computation*> > algoCompCache;
 
     std::set<std::string> liveNodes;
-    std::map<std::string, WorkUnit> assignedWork;
 
     pthread_mutex_t dataMutex;
     pthread_mutex_t livenessMutex;
@@ -80,6 +79,9 @@ private:
 
     LeftNeighbourIface* leftNb;
     RightNeighbourIface* rightNb;
+
+    std::ostream* outStream;
+    bool isOutStreamOwner;
 
     void waitThread();
 

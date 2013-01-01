@@ -306,6 +306,15 @@ void Synchronization::informAssignment(blob data) {
     pthread_mutex_unlock(&syncMutex);
 }
 
+// TODO: Lamport timestamps?
+void Synchronization::updateWorkCache(string& identifier, WorkUnit& work, string& originalOwner) {
+    if(originalOwner.empty()) {
+        workAssignments.erase(originalOwner);  // De-zombify
+    }
+    workAssignments[identifier] = work;
+}
+
+
 void Synchronization::informNoAssignment() {
     pthread_mutex_lock(&syncMutex);
 
