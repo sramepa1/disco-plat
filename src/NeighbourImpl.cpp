@@ -131,6 +131,16 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 cout << "Message type is TERMINATION_TOKEN" << endl;
 #endif
 
+                if(currentSyncModule->getComputatuonID() == data.computationID) {
+                    sendFurther = false;
+
+                    if(originMe) {
+                        currentSyncModule->informMyToken(data);
+                    } else {
+                        currentSyncModule->informForeignToken(data);
+                    }
+                }
+
                 break;
 
             case TERMINATE :
@@ -139,7 +149,14 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 cout << "Message type is TERMINATE" << endl;
 #endif
 
-                currentSyncModule->informTerminate();
+                if(currentSyncModule->getComputatuonID() == data.computationID) {
+                    currentSyncModule->informTerminate();
+                }
+
+                if(originRightNeighbour) {
+                    sendFurther = false;
+                }
+
                 break;
 
             default :
@@ -189,8 +206,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             cout << "Message type is INSTANCE_ANNOUNCEMENT" << endl;
 #endif
 
-        /*    if(!originMe) { */
-                repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
+            repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
 
                 if(data.slotA == BLOB_SA_IA_INIT_RESUME) {
                     repo->awakeInit();
@@ -199,12 +215,6 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 if(originRightNeighbour) {
                     sendFurther = false;
                 }
-        //    }
-#ifdef VERBOSE
-       /*     else {
-                cout << "Message was sent by myself. Ignoring." << endl;
-            }*/
-#endif
 
             break;
 

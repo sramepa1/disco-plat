@@ -10,6 +10,9 @@
 #include <vector>
 
 
+#define BLACK false
+#define WHITE true
+
 enum SyncState { WORKING, SYNCHRONIZING, IDLING, TERMINATING };
 
 
@@ -40,9 +43,24 @@ class Synchronization
 
     std::list<disco_plat::nodeID> workRequests;
 
+    typedef bool color;
+    color myColor;
+
+    bool terminationToken;
+    disco_plat::nodeID tokenOrigin;
+    color recievedColor;
+
+    bool terminating;
+    bool terminationLeader;
+    bool commandTerminate;
+
     pthread_mutex_t stateMutex;
     pthread_mutex_t syncMutex;
     pthread_cond_t idleCondition;
+
+
+
+    void sendTerminationToken();
 
 
     // DISABLED
@@ -77,6 +95,9 @@ public:
     void informRequest(disco_plat::nodeID requesteeID);
 
     void informResult(disco_plat::blob data);
+
+    void informMyToken(disco_plat::blob data);
+    void informForeignToken(disco_plat::blob data);
 
     void informTerminate();
 

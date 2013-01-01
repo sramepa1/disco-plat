@@ -18,6 +18,13 @@ Synchronization::Synchronization(Computation* comp, unsigned int id) : comp(comp
     haveMySolution = false;
     isWorkingState = true;
     splitSuccesful = true;
+
+    terminating = false;
+    terminationLeader = false;
+    commandTerminate = false;
+    terminationToken = false;
+
+    myColor = WHITE;
 }
 
 Synchronization::~Synchronization()
@@ -112,6 +119,8 @@ void Synchronization::synchronize() {
     // work requests
     while(!workRequests.empty()) {
         if(splitSuccesful && comp->splitWork(unit)) {
+            myColor = BLACK;
+
             blob message;
             message.sourceNode = networkModule->getMyID();
             message.computationID = computationID;
@@ -179,6 +188,9 @@ bool Synchronization::isWorkAvailable() {
     pthread_mutex_unlock(&stateMutex);
 
     // ask for more work
+
+    pthread_mutex_lock(&syncMutex);
+
     blob message;
     message.sourceNode = networkModule->getMyID();
     message.computationID = computationID;
@@ -186,11 +198,7 @@ bool Synchronization::isWorkAvailable() {
 
     rightNb->Boomerang(message);
 
-    // suspend thread
-
-    pthread_mutex_lock(&syncMutex);
     workReciewed = false;
-
     pthread_cond_wait(&idleCondition, &syncMutex);
 
     if(workReciewed) {
@@ -201,23 +209,81 @@ bool Synchronization::isWorkAvailable() {
         pthread_mutex_unlock(&stateMutex);
 
 #ifdef VERBOSE
-    cout << "Working thread awaken" << endl;
+        cout << "Working thread awaken" << endl;
 #endif
-
         return true;
     }
 
+
+    // tokenized termination detection
+    terminating = true;
+
+    if(terminationToken) {
+        sendTerminationToken();
+    } else {
 #ifdef VERBOSE
-    cout << "Initiating termination protocol" << endl;
+        cout << "I am termination leader - initiating termination protocol" << endl;
 #endif
 
-    // TODO tokens and termination detection
-    throw "TODO implement termination - work request rejected.";
+        terminationLeader = true;
 
+        while(terminationLeader) {
+            blob message;
+            message.sourceNode = networkModule->getMyID();
+            message.computationID = computationID;
+            message.messageType = TERMINATION_TOKEN;
+            message.slotA = (unsigned int) WHITE;
+
+            rightNb->Boomerang(message);
+
+#ifdef VERBOSE
+            cout << "Termination token send" << endl;
+#endif
+
+            pthread_cond_wait(&idleCondition, &syncMutex);
+
+            if(commandTerminate) {
+#ifdef VERBOSE
+                cout << "Executing my termination" << endl;
+#endif
+                pthread_mutex_unlock(&syncMutex);
+                return false;
+            }
+
+            if(recievedColor == WHITE) {
+#ifdef VERBOSE
+                cout << "Sending command to terminate the computation" << endl;
+#endif
+
+                blob message;
+                message.sourceNode = networkModule->getMyID();
+                message.computationID = computationID;
+                message.messageType = TERMINATE;
+
+                rightNb->Boomerang(message);
+
+#ifdef VERBOSE
+                cout << "Executing my termination" << endl;
+#endif
+                pthread_mutex_unlock(&syncMutex);
+                return false;
+            }
+        }
+    }
+
+#ifdef VERBOSE
+    cout << "Waiting for termnation command" << endl;
+#endif
+
+    while(!commandTerminate) {
+        pthread_cond_wait(&idleCondition, &syncMutex);
+    }
+
+#ifdef VERBOSE
+    cout << "Executing my termination" << endl;
+#endif
     pthread_mutex_unlock(&syncMutex);
-
     return false;
-
 }
 
 void Synchronization::informAssignment(blob data) {
@@ -279,9 +345,72 @@ void Synchronization::informResult(blob data) {
 }
 
 
-void Synchronization::informTerminate() {
-    // TODO
+void Synchronization::informMyToken(blob data) {
+    pthread_mutex_lock(&syncMutex);
+
+    terminationToken = true;
+    recievedColor = (color) data.slotA;
+
+#ifdef VERBOSE
+    cout << "Token retuned with color " << (recievedColor == WHITE ? "WHITE" : "BLACK")  << endl;
+#endif
+
+    pthread_cond_signal(&idleCondition);
+
+    pthread_mutex_unlock(&syncMutex);
 }
+
+void Synchronization::informForeignToken(blob data) {
+    pthread_mutex_lock(&syncMutex);
+
+    terminationToken = true;
+    recievedColor = (color) data.slotA;
+    tokenOrigin = data.sourceNode;
+
+    pthread_mutex_lock(&stateMutex);
+    bool tmp = isWorkingState;
+    pthread_mutex_unlock(&stateMutex);
+
+    if(!tmp) {
+        if(terminationLeader) {
+            string me(networkModule->getMyID().identifier);
+            string competitor(data.sourceNode.identifier);
+
+            if(me.compare(competitor) > 0) {
+#ifdef VERBOSE
+    cout << "More leaders detected - loosing my leadership" << endl;
+#endif
+                terminationLeader = false;
+                sendTerminationToken();
+            } else {
+#ifdef VERBOSE
+    cout << "More leaders detected - keeping my leadership" << endl;
+#endif
+            }
+
+
+        } else {
+            sendTerminationToken();
+        }
+    } else {
+#ifdef VERBOSE
+    cout << "Saving token till my work is finished" << endl;
+#endif
+    }
+
+    pthread_mutex_unlock(&syncMutex);
+}
+
+
+void Synchronization::informTerminate() {
+    pthread_mutex_lock(&syncMutex);
+
+    commandTerminate = true;
+    pthread_cond_signal(&idleCondition);
+
+    pthread_mutex_unlock(&syncMutex);
+}
+
 
 bool Synchronization::isWorking() {
     pthread_mutex_lock(&stateMutex);
@@ -297,5 +426,27 @@ bool Synchronization::hasWorkToSplit() {
     pthread_mutex_unlock(&stateMutex);
 
     return tmp;
+}
+
+
+void Synchronization::sendTerminationToken() {
+    blob message;
+    message.sourceNode = tokenOrigin;
+    message.computationID = computationID;
+    message.messageType = TERMINATION_TOKEN;
+
+    if(recievedColor == BLACK) {
+        message.slotA = BLACK;
+    } else {
+        message.slotA = (unsigned int) myColor;
+    }
+
+#ifdef VERBOSE
+    cout << "Sending token with color " << ( (color) message.slotA == WHITE ? "WHITE" : "BLACK")  << endl;
+#endif
+
+    rightNb->Boomerang(message);
+
+    myColor = WHITE;
 }
 
