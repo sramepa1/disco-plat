@@ -63,6 +63,26 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 cout << "Message type is WORK_REQUEST" << endl;
 #endif
 
+                // TODO recovery and cache
+
+                // request for my computatin ?
+                if(currentSyncModule->getComputatuonID() == data.computationID)
+                {
+                    if(originMe) // my own rejected request
+                    {
+                        currentSyncModule->informNoAssignment();
+                    }
+                    else if(currentSyncModule->hasWorkToSplit()) // request for me
+                    {
+                        currentSyncModule->informRequest(data.sourceNode);
+                        sendFurther = false;
+
+#ifdef VERBOSE
+                        cout << "Message WORK_REQUEST accepted for processing" << endl;
+#endif
+                    }
+                }
+
                 break;
 
             case WORK_ASSIGNMET :
@@ -70,6 +90,12 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 #ifdef VERBOSE
                 cout << "Message type is WORK_ASSIGNMET" << endl;
 #endif
+
+                // TODO recovery and cache
+
+                if(data.asignee.identifier == networkModule->getMyID().identifier) {
+                    //currentSyncModule->informAssignment();
+                }
 
                 break;
 
@@ -79,7 +105,12 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 cout << "Message type is RESULT" << endl;
 #endif
 
-                currentSyncModule->informResult(data.computationID, data.slotA, data.charDataSequence);
+                if(currentSyncModule->getComputatuonID() == data.computationID) {
+                    currentSyncModule->informResult(data.slotA, data.charDataSequence);
+#ifdef VERBOSE
+                    cout << "Message RESULT accepted for processing" << endl;
+#endif
+                }
 
                 if(originRightNeighbour) {
                     sendFurther = false;

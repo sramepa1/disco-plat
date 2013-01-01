@@ -5,6 +5,7 @@
 #include "NeighbourIface.h"
 #include "Computation.h"
 
+#include <list>
 #include <pthread.h>
 #include <vector>
 
@@ -30,7 +31,17 @@ class Synchronization
     bool haveMySolution;
 
     SyncState state;
+    bool isWorkingState;
+
+    bool workReciewed;
+    bool splitSuccesful;
+
+    std::list<disco_plat::nodeID> workRequests;
+
     pthread_mutex_t stateMutex;
+    pthread_mutex_t syncMutex;
+    pthread_cond_t idleCondition;
+
 
     // DISABLED
     Synchronization(const Synchronization&) {}
@@ -59,10 +70,17 @@ public:
 
     ///////////// network interface
 
-    void informAssignment(const char* data, int dataLenght, unsigned int computationID);
+    void informAssignment(disco_plat::blob data);
+    void informNoAssignment();
     void informRequest(disco_plat::nodeID requesteeID);
-    void informResult(unsigned int id, unsigned int optimum, disco_plat::blob::_charDataSequence_seq data);
+
+    void informResult(unsigned int optimum, disco_plat::blob::_charDataSequence_seq data);
+
     void informTerminate();
+
+    unsigned int getComputatuonID() { return computationID; }
+    bool isWorking();
+    bool hasWorkToSplit();
 
 };
 

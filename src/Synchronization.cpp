@@ -11,21 +11,26 @@ Synchronization::Synchronization(Computation* comp, unsigned int id) : comp(comp
     rightNb = &networkModule->getMyRightInterface();
 
     pthread_mutex_init(&stateMutex, NULL);
+    pthread_mutex_init(&syncMutex, NULL);
+    pthread_cond_init(&idleCondition, NULL);
 
     haveNewCirlceSolution = false;
     haveMySolution = false;
+    isWorkingState = true;
+    splitSuccesful = true;
 }
 
 Synchronization::~Synchronization()
 {
     pthread_mutex_destroy(&stateMutex);
+    pthread_mutex_destroy(&syncMutex);
+    pthread_cond_destroy(&idleCondition);
 }
 
 
 void Synchronization::synchronize() {
 
-    pthread_mutex_lock(&stateMutex);
-    state = SYNCHRONIZING;
+    pthread_mutex_lock(&syncMutex);
 
     // solution
     bool send;
@@ -95,15 +100,58 @@ void Synchronization::synchronize() {
     }
 
     // work requests
+    while(!workRequests.empty()) {
+        struct WorkUnit unit;
 
-    //TODO reply to work requests
+        if(splitSuccesful && comp->splitWork(unit)) {
+            blob message;
+            message.sourceNode = networkModule->getMyID();
+            message.computationID = computationID;
+            message.messageType = WORK_ASSIGNMET;
 
+            message.asignee = workRequests.front();
+            workRequests.pop_front();
+
+            message.slotA = unit.depth;
+            message.slotB = unit.instanceSize;
+
+            message.charDataSequence = blob::_charDataSequence_seq(unit.configStackVector.size());
+            for(unsigned int i = 0; i < unit.configStackVector.size(); ++i) {
+                message.charDataSequence[i] = unit.configStackVector[i];
+            }
+
+            message.longDataSequence = blob::_longDataSequence_seq(unit.intervalStackVector.size());
+            for(unsigned int i = 0; i < unit.intervalStackVector.size(); ++i) {
+                message.longDataSequence[i] = unit.intervalStackVector[i];
+            }
+
+            rightNb->Boomerang(message);
+
+#ifdef VERBOSE
+            cout << "Assigning WORK to " << message.asignee.identifier << endl;
+#endif
+
+        } else {
+            splitSuccesful = false;
+
+            blob message;
+            message.sourceNode = workRequests.front();
+            workRequests.pop_front();
+            message.computationID = computationID;
+            message.messageType = WORK_REQUEST;
+
+            rightNb->Boomerang(message);
+
+#ifdef VERBOSE
+            cout << "Declining WORK REQUEST to " << message.sourceNode.identifier << endl;
+#endif
+        }
+
+    }
 
     // flags reset
     haveNewCirlceSolution = false;
-
-    state = WORKING;
-    pthread_mutex_unlock(&stateMutex);
+    pthread_mutex_unlock(&syncMutex);
 
 }
 
@@ -111,34 +159,79 @@ void Synchronization::synchronize() {
 bool Synchronization::isWorkAvailable() {
 
     pthread_mutex_lock(&stateMutex);
-    state = IDLING;
+    isWorkingState = false;
     pthread_mutex_unlock(&stateMutex);
 
+    // ask for more work
+    blob message;
+    message.sourceNode = networkModule->getMyID();
+    message.computationID = computationID;
+    message.messageType = WORK_REQUEST;
 
+    rightNb->Boomerang(message);
 
+    // suspend thread
 
+    pthread_mutex_lock(&syncMutex);
+    workReciewed = false;
+
+    pthread_cond_wait(&idleCondition, &syncMutex);
+
+    if(workReciewed) {
+        pthread_mutex_unlock(&syncMutex);
+
+        pthread_mutex_lock(&stateMutex);
+        isWorkingState = true;
+        pthread_mutex_unlock(&stateMutex);
+
+        return true;
+    }
+
+    // TODO tokens and termination detection
+    throw "TODO implement termination - work request rejected.";
+
+    pthread_mutex_unlock(&syncMutex);
 
     return false;
 
 }
 
-void Synchronization::informAssignment(const char* data, int dataLenght, unsigned int computationID) {
-    pthread_mutex_lock(&stateMutex);
-    state = WORKING;
-    pthread_mutex_unlock(&stateMutex);
+void Synchronization::informAssignment(blob data) {
+    pthread_mutex_lock(&syncMutex);
 
+    struct WorkUnit unit;
+    unit.depth = data.slotA;
+    unit.instanceSize = data.slotB;
+    unit.configStackVector =  vector<char>(data.charDataSequence.get_buffer(), data.charDataSequence.get_buffer() + data.charDataSequence.length());
+    unit.intervalStackVector = vector<int>(data.longDataSequence.get_buffer(), data.longDataSequence.get_buffer() + data.longDataSequence.length());
 
+    comp->setWork(unit);
 
+    workReciewed = true;
+    pthread_cond_signal(&idleCondition);
+
+    pthread_mutex_unlock(&syncMutex);
+}
+
+void Synchronization::informNoAssignment() {
+    pthread_mutex_lock(&syncMutex);
+
+    workReciewed = false;
+    pthread_cond_signal(&idleCondition);
+
+    pthread_mutex_unlock(&syncMutex);
 }
 
 void Synchronization::informRequest(disco_plat::nodeID requesteeID) {
-
+    pthread_mutex_lock(&syncMutex);
+    workRequests.push_back(requesteeID);
+    pthread_mutex_unlock(&syncMutex);
 }
 
-void Synchronization::informResult(unsigned int id, unsigned int optimum, blob::_charDataSequence_seq data) {
-    pthread_mutex_lock(&stateMutex);
+void Synchronization::informResult(unsigned int optimum, blob::_charDataSequence_seq data) {
+    pthread_mutex_lock(&syncMutex);
 
-    if(id == computationID && comp->isBetter(optimum, circleSolutionOpt)) {
+    if(comp->isBetter(optimum, circleSolutionOpt)) {
         vector<char> tmp(data.length());
         for(unsigned int i = 0; i < data.length(); ++i) {
             tmp[i] = data[i];
@@ -148,25 +241,29 @@ void Synchronization::informResult(unsigned int id, unsigned int optimum, blob::
         circleConfiguration = tmp;
 
         haveNewCirlceSolution = true;
-
-#ifdef VERBOSE
-        cout << "Received accepted for processing" << endl;
-#endif
     }
-#ifdef VERBOSE
-    else {
-        cout << "Received solution rejected; id is " << id << ", optimum is " << optimum << endl;
-    }
-#endif
 
-    pthread_mutex_unlock(&stateMutex);
+    pthread_mutex_unlock(&syncMutex);
 }
 
 
 void Synchronization::informTerminate() {
-    pthread_mutex_lock(&stateMutex);
-    state = TERMINATING;
-    pthread_mutex_unlock(&stateMutex);
+    // TODO
 }
 
+bool Synchronization::isWorking() {
+    pthread_mutex_lock(&stateMutex);
+    bool tmp = isWorkingState;
+    pthread_mutex_unlock(&stateMutex);
+
+    return tmp;
+}
+
+bool Synchronization::hasWorkToSplit() {
+    pthread_mutex_lock(&stateMutex);
+    bool tmp = isWorkingState && splitSuccesful;
+    pthread_mutex_unlock(&stateMutex);
+
+    return tmp;
+}
 
