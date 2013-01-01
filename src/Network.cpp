@@ -16,6 +16,7 @@
 #include "NeighbourIface.h"
 #include "NeighbourImpl.h"
 #include "Synchronization.h"
+#include "Repository.h"
 #include "globals.h"
 
 using namespace std;
@@ -343,7 +344,25 @@ void Network::reportDeadLeftNode() {
 
         leftRemoteObject->RebuildNetwork(myID);
 
-        // TODO: report that network is rebuilt
+        set<string> liveNodesSet;
+        for(unsigned i = 0; i < liveNodes.length(); ++i) {
+            liveNodesSet.insert((const char*)liveNodes[i].identifier);
+        }
+        repo->setLiveNodes(liveNodesSet);
+
+        set<unsigned> compIDSet;
+        for(unsigned i = 0; i < liveCompIDs.length(); ++i) {
+            compIDSet.insert(liveCompIDs[i]);
+        }
+        //repo->setSurvivingComputations(compIDSet);
+
+        blob data;
+        data.sourceNode = myID;
+        data.messageType = NETWORK_REBUILT;
+        data.nodeIDSequence = liveNodes;
+        data.longDataSequence = liveCompIDs;
+        getMyRightInterface().Boomerang(data);
+
     } catch(...) {
         // EPIC fail!!!
         sendBoomerangAndAbort(rightRemoteObject);
@@ -356,7 +375,7 @@ void Network::reportDeadRightNode() {
     if(!networkBroken) {
         try {
             SequenceTmpl<nodeID, MICO_TID_DEF> newNodeSequence;
-            SequenceTmpl<ULong, MICO_TID_DEF> newCompSequence;
+            SequenceTmpl<Long, MICO_TID_DEF> newCompSequence;
 
             newNodeSequence.length(1);
             newCompSequence.length(1);
@@ -368,6 +387,14 @@ void Network::reportDeadRightNode() {
             networkBroken = true;
         } catch(COMM_FAILURE&) {
             // I am alone...
+            set<string> liveNodesSet;
+            liveNodesSet.insert((const char*)myID.identifier);
+            repo->setLiveNodes(liveNodesSet);
+
+            set<unsigned> compIDSet;
+            compIDSet.insert(currentSyncModule->getComputationID());
+            //repo->setSurvivingComputations(compIDSet);
+
             createSingleNodeNetworkWithMutex();
         }
     }

@@ -13,7 +13,8 @@ struct nodeID {
 };
 
 
-enum type { PING, WORK_REQUEST, WORK_ASSIGNMET, RESULT, TERMINATION_TOKEN, TERMINATE, FREE_ID_SEARCH, INSTANCE_ANNOUNCEMENT, NODE_ANNOUNCEMENT };
+enum type { PING, WORK_REQUEST, WORK_ASSIGNMET, RESULT, TERMINATION_TOKEN, TERMINATE, FREE_ID_SEARCH,
+            INSTANCE_ANNOUNCEMENT, NODE_ANNOUNCEMENT, NETWORK_REBUILT };
 
 
 struct blob {
@@ -25,6 +26,7 @@ struct blob {
 
     sequence<char> charDataSequence;
     sequence<long> longDataSequence;
+    sequence<nodeID> nodeIDSequence;
     string dataStringA;
     string dataStringB;
     unsigned long slotA;
@@ -62,7 +64,7 @@ interface RightNeighbour {
     void BuildNetAndRequestData(in nodeID newNeighbourID);
 
     // Informs the circle that a node died. Message shall be resend in the original direction till it finds the other end.
-    void NodeDied(in nodeID reportingNodeID, in sequence<nodeID> liveNodes, in sequence<unsigned long> compIDs);
+    void NodeDied(in nodeID reportingNodeID, in sequence<nodeID> liveNodes, in sequence<long> compIDs);
 
     // Creates a new connection between nodes whose neighbours have died
     void RebuildNetwork(in nodeID newNeighbourID);

@@ -41,11 +41,11 @@ public:
 class Left_NodeDied : public QueueItem {
     const ::disco_plat::nodeID& reportingNodeID;
     const SequenceTmpl< ::disco_plat::nodeID, MICO_TID_DEF> liveNodes;
-    const SequenceTmpl<CORBA::ULong,MICO_TID_DEF> compIDs;
+    const SequenceTmpl<CORBA::Long,MICO_TID_DEF> compIDs;
 public:
     Left_NodeDied(const ::disco_plat::nodeID& reportingNodeID,
                   const SequenceTmpl< ::disco_plat::nodeID, MICO_TID_DEF>& liveNodes,
-                  const SequenceTmpl<CORBA::ULong,MICO_TID_DEF>& compIDs)
+                  const SequenceTmpl<CORBA::Long,MICO_TID_DEF>& compIDs)
         : reportingNodeID(reportingNodeID), liveNodes(liveNodes), compIDs(compIDs) {}
 
     void sendMe(NeighbourPair neighbours) {

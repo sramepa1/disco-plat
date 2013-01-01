@@ -160,6 +160,27 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
                 break;
 
+            case NETWORK_REBUILT: {
+
+#ifdef VERBOSE
+                cout << "Message type is NETWORK_REBUILT" << endl;
+#endif
+
+                set<string> liveNodesSet;
+                for(unsigned i = 0; i < data.nodeIDSequence.length(); ++i) {
+                    liveNodesSet.insert((const char*)data.nodeIDSequence[i].identifier);
+                }
+                repo->setLiveNodes(liveNodesSet);
+
+                set<unsigned> compIDSet;
+                for(unsigned i = 0; i < data.longDataSequence.length(); ++i) {
+                    compIDSet.insert(data.longDataSequence[i]);
+                }
+                //repo->setSurvivingComputations(compIDSet);
+
+                break;
+            }
+
             default :
                 break;
         }
@@ -279,11 +300,11 @@ void RightNeighbourImpl::BuildNetAndRequestData(const nodeID& newNeighbourID) {
 
 
 void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, SequenceTmpl<nodeID, MICO_TID_DEF> liveNodes,
-                                  SequenceTmpl<ULong, MICO_TID_DEF> compIDs) {
+                                  SequenceTmpl<Long, MICO_TID_DEF> compIDs) {
 
     cout << "Recieved message NodeDied from right neighbour" << endl;
     SequenceTmpl<nodeID, MICO_TID_DEF> newNodeSequence;
-    SequenceTmpl<ULong, MICO_TID_DEF> newCompSequence;
+    SequenceTmpl<Long, MICO_TID_DEF> newCompSequence;
     newNodeSequence.length(liveNodes.length() + 1);
     newCompSequence.length(liveNodes.length() + 1);
 

@@ -17,7 +17,7 @@ public:
     virtual void BuildNetAndRequestData(const ::disco_plat::nodeID& newNeighbourID);
     virtual void NodeDied( const ::disco_plat::nodeID& reportingNodeID,
                            SequenceTmpl< ::disco_plat::nodeID, MICO_TID_DEF> liveNodes,
-                           SequenceTmpl<CORBA::ULong, MICO_TID_DEF> compIDs);
+                           SequenceTmpl<CORBA::Long, MICO_TID_DEF> compIDs);
     virtual void RebuildNetwork(const ::disco_plat::nodeID& newNeighbourID);
 };
 
