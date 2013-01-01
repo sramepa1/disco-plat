@@ -158,7 +158,7 @@ bool Computation::splitWork(WorkUnit& work) {
 
         if(branchCount >= 2) {
             int amountToGive = (int)((double)branchCount * 0.707106781187);
-                                // 1/sqrt(2) should lead to 2 roughly area-equivalent stace space slices
+                                // 1/sqrt(2) should lead to 2 roughly area-equivalent state space slices
             int cut = right - amountToGive;
 
             work.intervalStackVector.push_back(cut);
@@ -209,6 +209,11 @@ void Computation::setWork(WorkUnit& work) {
 
 void Computation::setSolution(opt_t optimum, vector<char> configuration, bool isAbsolute) {
     this->optimum = optimum;
+
+    if(configuration.size() != instanceSize) {
+        throw "Attempted to set a configuration of wrong size as the current solution!";
+    }
+
     memcpy(optimalConfig, configuration.data(), instanceSize);
     absoluteSolution = isAbsolute;
 }

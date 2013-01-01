@@ -117,8 +117,8 @@ void Knapsack::expand() {
 void Knapsack::dataChanged() {
 	for(int i = 0; i <= comp->getDepthLevel(); i++) {
 		char* config = comp->accessConfigAtDepth(i);
-		int sumc;
-		int sumw;
+		int sumc = 0;
+		int sumw = 0;
 		for(unsigned int j = 0; j < instanceSize; j++) {
 			if(config[j]) {
 				sumc += cost[j];
