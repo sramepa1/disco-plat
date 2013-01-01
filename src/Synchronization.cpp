@@ -46,6 +46,7 @@ void Synchronization::synchronize() {
         pair<opt_t, vector<char> > tmp = comp->getSolution();
         mySolutionOpt = tmp.first;
         myConfiguration = tmp.second;
+        mySolutionAbsolute = comp->isSolutionAbsolute();
 
         haveMySolution = true;
         send = true;
@@ -67,7 +68,7 @@ void Synchronization::synchronize() {
     cout << "Accepting solution from circle with optimum " << circleSolutionOpt << endl;
 #endif
 
-        comp->setSolution(circleSolutionOpt, circleConfiguration, false); // TODO how to get is trivial ?
+        comp->setSolution(circleSolutionOpt, circleConfiguration, circleSolutionAbsolute);
         mySolutionOpt = circleSolutionOpt;
 
         haveMySolution = true;
@@ -86,13 +87,12 @@ void Synchronization::synchronize() {
         message.messageType = RESULT;
 
         message.slotA = (unsigned int) mySolutionOpt;
+        message.slotB = (unsigned int) mySolutionAbsolute;
 
-        blob::_charDataSequence_seq data(myConfiguration.size());
+        message.charDataSequence.length(myConfiguration.size());
         for(unsigned int i = 0; i < myConfiguration.size(); ++i) {
-            data[i] = myConfiguration[i];
+            message.charDataSequence[i] = myConfiguration[i];
         }
-
-        message.charDataSequence = data;
 
         rightNb->Boomerang(message);
 
@@ -245,17 +245,18 @@ void Synchronization::informRequest(disco_plat::nodeID requesteeID) {
     pthread_mutex_unlock(&syncMutex);
 }
 
-void Synchronization::informResult(unsigned int optimum, blob::_charDataSequence_seq data) {
+void Synchronization::informResult(blob data) {
     pthread_mutex_lock(&syncMutex);
 
-    if(comp->isBetter(optimum, circleSolutionOpt)) {
-        vector<char> tmp(data.length());
-        for(unsigned int i = 0; i < data.length(); ++i) {
-            tmp[i] = data[i];
+    if(comp->isBetter(data.slotA, circleSolutionOpt)) {
+        vector<char> tmp(data.charDataSequence.length());
+        for(unsigned int i = 0; i < data.charDataSequence.length(); ++i) {
+            tmp[i] = data.charDataSequence[i];
         }
 
-        circleSolutionOpt = optimum;
+        circleSolutionOpt = data.slotA;
         circleConfiguration = tmp;
+        circleSolutionAbsolute = (bool) data.slotB;
 
         haveNewCirlceSolution = true;
     }

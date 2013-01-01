@@ -113,7 +113,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 #endif
 
                 if(currentSyncModule->getComputatuonID() == data.computationID) {
-                    currentSyncModule->informResult(data.slotA, data.charDataSequence);
+                    currentSyncModule->informResult(data);
 #ifdef VERBOSE
                     cout << "Message RESULT accepted for processing" << endl;
 #endif

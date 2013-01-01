@@ -24,10 +24,12 @@ class Synchronization
 
     std::vector<char> circleConfiguration;
     opt_t circleSolutionOpt;
+    bool circleSolutionAbsolute;
     bool haveNewCirlceSolution;
 
     std::vector<char> myConfiguration;
     opt_t mySolutionOpt;
+    bool mySolutionAbsolute;
     bool haveMySolution;
 
     struct WorkUnit unit;
@@ -74,7 +76,7 @@ public:
     void informNoAssignment();
     void informRequest(disco_plat::nodeID requesteeID);
 
-    void informResult(unsigned int optimum, disco_plat::blob::_charDataSequence_seq data);
+    void informResult(disco_plat::blob data);
 
     void informTerminate();
 
