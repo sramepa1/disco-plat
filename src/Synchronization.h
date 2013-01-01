@@ -101,7 +101,6 @@ public:
 
     void informTerminate();
 
-    unsigned int getComputatuonID() { return computationID; }
     bool isWorking();
     bool hasWorkToSplit();
 

@@ -66,7 +66,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 // TODO recovery and cache
 
                 // request for my computatin ?
-                if(currentSyncModule->getComputatuonID() == data.computationID)
+                if(currentSyncModule->getComputationID() == data.computationID)
                 {
                     if(originMe) // my own rejected request
                     {
@@ -112,7 +112,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 cout << "Message type is RESULT" << endl;
 #endif
 
-                if(currentSyncModule->getComputatuonID() == data.computationID) {
+                if(currentSyncModule->getComputationID() == data.computationID) {
                     currentSyncModule->informResult(data);
 #ifdef VERBOSE
                     cout << "Message RESULT accepted for processing" << endl;
@@ -131,7 +131,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 cout << "Message type is TERMINATION_TOKEN" << endl;
 #endif
 
-                if(currentSyncModule->getComputatuonID() == data.computationID) {
+                if(currentSyncModule->getComputationID() == data.computationID) {
                     sendFurther = false;
 
                     if(originMe) {
@@ -149,7 +149,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 cout << "Message type is TERMINATE" << endl;
 #endif
 
-                if(currentSyncModule->getComputatuonID() == data.computationID) {
+                if(currentSyncModule->getComputationID() == data.computationID) {
                     currentSyncModule->informTerminate();
                 }
 
@@ -167,19 +167,6 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
     ////////// Not yet fully started
     switch(data.messageType) {
-
-        case TERMINATE :
-
-#ifdef VERBOSE
-            cout << "Message type is TERMINATE" << endl;
-#endif
-
-            if(currentSyncModule == NULL) {
-                cout << "Recieved TERMINATE command when not yet fully initialized. Hard exit process." << endl;
-                exit(ERR_COMMAND_TERMINATE);
-            }
-
-            break;
 
         case FREE_ID_SEARCH :
 
@@ -200,6 +187,31 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
             break;
 
+
+        case NODE_ANNOUNCEMENT :
+
+#ifdef VERBOSE
+            cout << "Message type is NODE_ANNOUNCEMENT" << endl;
+#endif
+
+            {
+                string s1(data.dataStringA);
+                repo->addLiveNode(s1);
+
+                if(data.slotA == 2) {
+                    string s2(data.dataStringB);
+                    repo->addLiveNode(s2);
+                }
+
+                if(originMe && s1.compare(networkModule->getMyID().identifier) == 0) {
+                    repo->awakeInit();
+                }
+
+            }
+
+            break;
+
+
         case INSTANCE_ANNOUNCEMENT :
 
 #ifdef VERBOSE
@@ -208,13 +220,13 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
             repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
 
-                if(data.slotA == BLOB_SA_IA_INIT_RESUME) {
-                    repo->awakeInit();
-                }
+            if(data.slotA == BLOB_SA_IA_INIT_RESUME) {
+                repo->broadcastMyID();
+            }
 
-                if(originRightNeighbour) {
-                    sendFurther = false;
-                }
+            if(originRightNeighbour) {
+                sendFurther = false;
+            }
 
             break;
 

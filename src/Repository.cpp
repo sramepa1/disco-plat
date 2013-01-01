@@ -186,16 +186,22 @@ void Repository::startComputation(unsigned int id, bool localStart) {
 
 void Repository::init() {
 
-    pthread_mutex_lock(&livenessMutex);
-    liveNodes.insert(string(networkModule->getMyID().identifier));
-    pthread_mutex_unlock(&livenessMutex);
-
     if(networkModule->isSingle()) {
+#ifdef VERBOSE
+    cout << "I am a single node - no data gathering needed" << endl;
+#endif
         maxID = 1;
+
+        pthread_mutex_lock(&livenessMutex);
+        liveNodes.insert(string(networkModule->getMyID().identifier));
+        pthread_mutex_unlock(&livenessMutex);
+
         return;
     }
 
-    // TODO: Broadcast my ID and gather all other IDs!
+#ifdef VERBOSE
+    cout << "Starting data gathering - idling main thread" << endl;
+#endif
 
     pthread_mutex_lock(&dataMutex);
     isInitSleeping = true;
@@ -209,6 +215,10 @@ void Repository::init() {
 
 void Repository::awakeInit() {
     pthread_mutex_lock(&dataMutex);
+
+#ifdef VERBOSE
+    cout << "Initial data gathering complete - waking main thread" << endl;
+#endif
 
     if(isInitSleeping) {
         pthread_cond_signal(&initCondition);
@@ -232,28 +242,60 @@ void Repository::awakeFreeID(unsigned int maxID) {
 void Repository::sendAllData() {
     pthread_mutex_lock(&dataMutex);
 
-    map<unsigned int, pair<string, string> >::iterator it;
-    for(it = data.begin(); it != data.end(); ++it) {
+    // send live nodes
+    set<string>::iterator lit = liveNodes.begin();
+    while(lit != liveNodes.end()) {
+        blob message;
+        message.sourceNode = networkModule->getRightID(); // intentional hack to stop boomerang propagating
+        message.computationID = 0;
+        message.messageType = NODE_ANNOUNCEMENT;
+        message.dataStringA = (*lit).c_str();
+
+        if(++lit == liveNodes.end()) {
+            message.slotA = 1;
+        } else {
+            message.dataStringB= (*lit).c_str();
+            message.slotA = 2;
+            ++lit;
+        }
+
+        rightNb->Boomerang(message);
+
+    }
+
+    // send instances
+    map<unsigned int, pair<string, string> >::iterator dit;
+    for(dit = data.begin(); dit != data.end(); ++dit) {
 
         blob message;
         message.sourceNode = networkModule->getRightID(); // intentional hack to stop boomerang propagating
-        message.computationID = it->first;
+        message.computationID = dit->first;
         message.messageType = INSTANCE_ANNOUNCEMENT;
-        message.dataStringA = it->second.first.c_str();
-        message.dataStringB = it->second.second.c_str();
+        message.dataStringA = dit->second.first.c_str();
+        message.dataStringB = dit->second.second.c_str();
 
-        if(++it == data.end()) {
+        if(++dit == data.end()) {
             message.slotA = BLOB_SA_IA_INIT_RESUME;
         } else {
             message.slotA = BLOB_SA_IA_NONE;
         }
-        --it;
+        --dit;
 
         rightNb->Boomerang(message);
 
     }
 
     pthread_mutex_unlock(&dataMutex);
+}
+
+void Repository::broadcastMyID() {
+    blob message;
+    message.sourceNode = networkModule->getMyID();
+    message.computationID = 0;
+    message.messageType = NODE_ANNOUNCEMENT;
+    message.dataStringA = networkModule->getMyID().identifier;
+
+    rightNb->Boomerang(message);
 }
 
 
@@ -266,6 +308,9 @@ bool Repository::isAlive(string& identifier) {
 
 void Repository::addLiveNode(string& identifier) {
     pthread_mutex_lock(&livenessMutex);
+#ifdef VERBOSE
+    cout << "Adding new allive node: " << identifier << endl;
+#endif
     liveNodes.insert(identifier);
     pthread_mutex_unlock(&livenessMutex);
 }

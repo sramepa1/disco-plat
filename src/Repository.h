@@ -60,6 +60,7 @@ public:
     unsigned int getMaxID() { return maxID; }
 
     void sendAllData();
+    void broadcastMyID();
 
 private:
     std::map<unsigned int, std::pair<std::string, std::string> > data;
