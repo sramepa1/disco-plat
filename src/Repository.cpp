@@ -148,6 +148,8 @@ void Repository::setSurvivingComputations(const set<unsigned int>& computationID
     while(it != data.end()) {
         if(computationIDs.find(it->first) == computationIDs.end()) {
             destroyInternal((it++)->first); // post-increment required as the iterator will be invalidated!
+        } else {
+            ++it;
         }
     }
 
