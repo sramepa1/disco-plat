@@ -104,7 +104,7 @@ void Knapsack::expand() {
 			weightCache[depth + 1] = weightCache[depth] + weight[i];
 
 			if((opt_t)newCost >= comp->getOptimum()) {
-				comp->newSolution(newCost, configBuffer, depth == (int)instanceSize - 2);
+				comp->newSolution(newCost, configBuffer, depth == (int)instanceSize - 1);
 			}
 
 			return;

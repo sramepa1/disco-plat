@@ -45,10 +45,13 @@ void Computation::setSync(Synchronization* sync) {
 
 
 void Computation::start(bool localStart) {
-    currentSyncModule = sync;   // TODO: Mutex
+    currentSyncModule = sync;
+
+    cout << (localStart ? "Initiating" : "Joining") << " computation " << sync->getComputationID() << endl;
 
     if(!localStart && !sync->isWorkAvailable()) {
         cout << "Late to the party... Joined a computation where noone wants to share work. Quitting." << endl;
+        currentSyncModule = NULL;
         return;
     }
 
@@ -62,8 +65,10 @@ void Computation::start(bool localStart) {
         cout << "Absolute solution detected." << endl;
     }
 
-    cout << "Computation finished with the following result:" << endl;
+    cout << "Computation " << sync->getComputationID() << " finished with the following result:" << endl;
     algo->printConfig(optimalConfig, cout);
+
+    currentSyncModule = NULL;
 }
 
 void Computation::DFS() {
@@ -72,8 +77,8 @@ void Computation::DFS() {
 
     while(true) {
 
-//          cout << "Trying configuration => ";
-//          algo->printConfig(configStack + stackTop*instanceSize, cout);
+//      cout << "Trying configuration => ";
+//      algo->printConfig(configStack + stackTop*instanceSize, cout);
 
         if(algo->evaluate()) {
             algo->expand();

@@ -6,6 +6,8 @@
 #include "Synchronization.h"
 
 #include <sstream>
+#include <cstdlib>
+#include <ctime>
 
 using namespace std;
 using namespace disco_plat;
@@ -21,6 +23,8 @@ Repository::Repository() {
 
     isInitSleeping = false;
     isFreeIDSleeping = false;
+
+    srand(time(NULL));
 }
 
 Repository::~Repository() {
@@ -64,6 +68,12 @@ unsigned int Repository::getAnyValidID() {
     {
         pthread_mutex_unlock(&dataMutex);
         return INVALID_COMPUTATION_ID;
+    }
+
+    // Randomize which computation to join
+    int shift = rand() % data.size();
+    for(int i = 0; i < shift; i++) {
+        ++it;
     }
 
     pthread_mutex_unlock(&dataMutex);

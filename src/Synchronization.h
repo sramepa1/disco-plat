@@ -39,7 +39,7 @@ public:
     Synchronization(Computation* comp, unsigned int id);
     ~Synchronization();
 
-    ///////////// algorithm interface
+    ///////////// computation interface
 
     /**
      * Checks if threre are any incoming messages and then calls their handlers.
@@ -50,6 +50,11 @@ public:
      * Blocks until new work arrives or computation terminates.
      */
     bool isWorkAvailable();
+
+    /**
+     * Returns this instance's computation ID.
+     */
+    unsigned int getComputationID() { return computationID; }
 
 
     ///////////// network interface
