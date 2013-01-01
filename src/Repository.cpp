@@ -34,7 +34,7 @@ Repository::~Repository() {
 
 unsigned int Repository::getFreeID() {
 
-    if(isSingleNode()) {
+    if(networkModule->isSingle()) {
         return maxID++;
     }
 
@@ -96,7 +96,7 @@ void Repository::newData(unsigned int id, std::string algoName, std::string inst
     cout << "Adding new instance data: " << instanceText;
 #endif
 
-    if(broadcast && !isSingleNode()) {
+    if(broadcast && !networkModule->isSingle()) {
 
 #ifdef VERBOSE
     cout << "Broadcasting new instance";
@@ -165,7 +165,7 @@ void Repository::start(unsigned int id, bool localStart) {
 
 
 void Repository::init() {
-    if(isSingleNode()) {
+    if(networkModule->isSingle()) {
         maxID = 1;
         return;
     }

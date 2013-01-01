@@ -57,6 +57,8 @@ public:
     void start(const char* remoteAddr);
     void enqueItem(QueueItem* item);
 
+    bool isSingle() { return myID.identifier == leftID.identifier; } // TODO more efficiently with flags
+
     RightNeighbourIface& getMyRightInterface();
     LeftNeighbourIface& getMyLeftInterface();
 

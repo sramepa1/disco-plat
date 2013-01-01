@@ -30,6 +30,10 @@ Synchronization::~Synchronization()
 
 void Synchronization::synchronize() {
 
+    if(networkModule->isSingle()) {
+        return;
+    }
+
     pthread_mutex_lock(&syncMutex);
 
     // solution
@@ -155,6 +159,10 @@ void Synchronization::synchronize() {
 
 
 bool Synchronization::isWorkAvailable() {
+
+    if(networkModule->isSingle()) {
+        return false;
+    }
 
 #ifdef VERBOSE
     cout << "I have nothing to do ... Requesting some work" << endl;
