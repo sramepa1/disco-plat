@@ -95,7 +95,7 @@ public:
     /**
      * Flushes stacks and resets environment. Called when pairing an AlgoInstance with this Computation.
      */
-    void reinitialize(int instanceSize, opt_t initialOptimum, char* initialConfiguration);
+    void reinitialize(int instanceSize, opt_t initialOptimum, char* initialConfiguration, int maxDepthLevel);
 
     opt_t getOptimum() { return optimum; }
 
@@ -124,12 +124,10 @@ private:
     int instanceSize; // determines config length and maximum stack depths
 
     char* configStack;
-    char* configStackCopy; // for work splitting
-
     std::pair<int,int>* intervalStack;
-    std::pair<int,int>* intervalStackCopy;
 
     int stackTop;   // shared for both stacks
+    int maxStackSize;
 
     // current best known solution
     opt_t optimum;
@@ -137,6 +135,7 @@ private:
 
     bool newSolutionFound;  // flag to broadcast my solution upon next synchronization
     bool absoluteSolution;  // flag to use when an absolute solution is found (be it here or elsewhere)
+    bool workSplitPossible; // flag to avoid evaluating work-split possibility when already past the point of no return
 
     int loopCounter;
     int loopsToSync;    // Count of DFS iterations betwen synchronizations.

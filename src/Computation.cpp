@@ -11,11 +11,11 @@ extern "C" {
 using namespace std;
 
 Computation::Computation() :    algo(NULL), sync(NULL),
-                                configStack(NULL), configStackCopy(NULL),
-                                intervalStack(NULL), intervalStackCopy(NULL),
-                                stackTop(0),
+                                configStack(NULL),
+                                intervalStack(NULL),
+                                stackTop(0), maxStackSize(0),
                                 optimum(0), optimalConfig(NULL),
-                                newSolutionFound(false), absoluteSolution(false),
+                                newSolutionFound(false), absoluteSolution(false), workSplitPossible(true),
                                 loopCounter(0), loopsToSync(3000000)
 {
     timestamp = areWeThereYet();
@@ -137,13 +137,47 @@ bool Computation::isBetter(opt_t thisOptimum, opt_t thanThisOptimum) {
 
 bool Computation::splitWork(WorkUnit& work) {
 
-    //int depth = stackTop + 1;
-    //work.depth = depth;
+    if(!workSplitPossible) {
+        return false;
+    }
 
-    //work.configStackVector.clear();
-    //work.configStackVector.resize(instanceSize * depth);
+    work.instanceSize = instanceSize;
+    work.intervalStackVector.clear();
 
-    return false; // TODO: Actual work splitting
+    // avoid splitting on very deep levels (above 60% of theoretical maximum)
+    for(int stackLevel = 0; stackLevel <= stackTop && stackLevel <= (maxStackSize * 3) / 5; stackLevel++) {
+
+        work.configStackVector.resize(instanceSize * (stackLevel + 1));
+        memcpy(work.configStackVector.data() + stackLevel * instanceSize,
+               configStack + stackLevel * instanceSize,
+               instanceSize);
+
+        int left = intervalStack[stackLevel].first;
+        int right = intervalStack[stackLevel].second;
+        int branchCount = right - left;
+
+        if(branchCount >= 2) {
+            int amountToGive = (int)((double)branchCount * 0.707106781187);
+                                // 1/sqrt(2) should lead to 2 roughly area-equivalent stace space slices
+            int cut = right - amountToGive;
+
+            work.intervalStackVector.push_back(cut);
+            work.intervalStackVector.push_back(right);
+            intervalStack[stackLevel].second = cut;
+
+            #ifdef VERBOSE
+            cout << "Keeping work slice [" << left << ", " << cut << ") at level " << stackLevel << endl;
+            #endif
+
+            work.depth = stackLevel + 1;
+            return true;
+        }
+
+        work.intervalStackVector.push_back(left);
+        work.intervalStackVector.push_back(right);
+    }
+
+    return (workSplitPossible = false); // TODO: Discuss optimality of outcome caching and point-of-no-return behavior
 }
 
 
@@ -162,8 +196,14 @@ void Computation::setWork(WorkUnit& work) {
         intervalStack[i++] = pair<int, int>(tmp, *it);
     }
 
+    #ifdef VERBOSE
+    cout << "Received work slice [" << intervalStack[stackTop].first << ", " << intervalStack[stackTop].second
+         << ") at level " << stackTop << endl;
+    #endif
+
     algo->dataChanged();
     newSolutionFound = false;
+    workSplitPossible = true;
 }
 
 
@@ -174,17 +214,19 @@ void Computation::setSolution(opt_t optimum, vector<char> configuration, bool is
 }
 
 
-void Computation::reinitialize(int instanceSize, opt_t initialOptimum, char* initialConfiguration) {
+void Computation::reinitialize(int instanceSize, opt_t initialOptimum, char* initialConfiguration, int maxDepthLevel) {
     this->instanceSize = instanceSize;
     optimum = initialOptimum;
     stackTop = 0;
+    maxStackSize = maxDepthLevel + 1;
     absoluteSolution = false;
     newSolutionFound = false;
+    workSplitPossible = true;
 
     deallocateAll();
 
-    configStack = new char[instanceSize * (instanceSize + 1)];
-    intervalStack = new pair<int, int>[instanceSize * (instanceSize + 1)];
+    configStack = new char[instanceSize * maxStackSize];
+    intervalStack = new pair<int, int>[instanceSize * maxStackSize];
     optimalConfig = new char[instanceSize];
 
     memcpy(optimalConfig, initialConfiguration, instanceSize);
@@ -227,8 +269,6 @@ void Computation::pushState(char* configuration, std::pair<int,int> interval) {
 
 void Computation::deallocateAll() {
     delete[] configStack;
-    delete[] configStackCopy;
     delete[] intervalStack;
-    delete[] intervalStackCopy;
     delete[] optimalConfig;
 }

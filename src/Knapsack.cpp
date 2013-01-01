@@ -24,7 +24,7 @@ Knapsack::Knapsack(istream& textDataStream, Computation* comp) : AlgoInstance(co
 
     configBuffer = new char[instanceSize];
     memset(configBuffer, 0, instanceSize);
-    comp->reinitialize(instanceSize, 0, configBuffer);
+    comp->reinitialize(instanceSize, 0, configBuffer, instanceSize);
     costCache[0] = 0;
 
     for(unsigned int i = 0; i < instanceSize; i++) {
