@@ -3,8 +3,10 @@
 
 #include "Algo.h"
 #include "Computation.h"
+#include "Interface.h"
 
 #include <map>
+#include <set>
 #include <pthread.h>
 #include <string>
 
@@ -16,7 +18,9 @@ public:
     Repository();
     ~Repository();
 
-    ///////// general interface
+    void init();
+
+    ///////// ID and computation data
 
     unsigned int getFreeID();
     unsigned int getAnyValidID();
@@ -25,13 +29,25 @@ public:
 
     std::pair<AlgoInstance*, Computation*> getAlgoComp(unsigned int id);
 
-    void init();
-
     void start(unsigned int id, bool localStart);
 
     // frees resources and marks ID as invalid
     void destroy(unsigned int id);
 
+
+    ///////// Node liveness and work cache
+
+    bool isAlive(CORBA::String_var& identifier);
+
+    void addLiveNode(CORBA::String_var& identifier);
+
+    // Can be changed to CORBA sequence<string> if needed
+    void setLiveNodes(std::set<std::string>& liveNodes);
+
+
+    // TODO: Lamport timestamps?
+    // Pass empty string as originalOwner if this is not a de-zombification update
+    void updateWorkCache(CORBA::String_var& identifier, WorkUnit& work, CORBA::String_var& originalOwner);
 
     ///////// interface for calling from networ init only
 
@@ -46,7 +62,11 @@ private:
     std::map<unsigned int, std::pair<std::string, std::string> > data;
     std::map<unsigned int, std::pair<AlgoInstance*, Computation*> > algoCompCache;
 
+    std::set<std::string> liveNodes;
+    std::map<std::string, WorkUnit> assignedWork;
+
     pthread_mutex_t dataMutex;
+    pthread_mutex_t livenessMutex;
     pthread_cond_t initCondition;
 
     bool isInitSleeping;

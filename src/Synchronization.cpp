@@ -31,6 +31,12 @@ Synchronization::~Synchronization()
 void Synchronization::synchronize() {
 
     if(networkModule->isSingle()) {
+        #ifdef VERBOSE
+        if(comp->hasNewSolution()) {
+            comp->getSolution();
+            cout << "I may be alone, but I have a new optimum: " << comp->getOptimum() << endl;
+        }
+        #endif
         return;
     }
 

@@ -19,6 +19,7 @@ Repository::Repository() {
     rightNb = &networkModule->getMyRightInterface();
 
     pthread_mutex_init(&dataMutex, NULL);
+    pthread_mutex_init(&livenessMutex, NULL);
     pthread_cond_init(&initCondition, NULL);
 
     isInitSleeping = false;
@@ -29,6 +30,7 @@ Repository::Repository() {
 
 Repository::~Repository() {
     pthread_mutex_destroy(&dataMutex);
+    pthread_mutex_destroy(&livenessMutex);
     pthread_cond_destroy(&initCondition);
 }
 
@@ -165,10 +167,17 @@ void Repository::start(unsigned int id, bool localStart) {
 
 
 void Repository::init() {
+
+    pthread_mutex_lock(&livenessMutex);
+    liveNodes.insert(string(networkModule->getMyID().identifier));
+    pthread_mutex_unlock(&livenessMutex);
+
     if(networkModule->isSingle()) {
         maxID = 1;
         return;
     }
+
+    // TODO: Broadcast my ID and gather all other IDs!
 
     pthread_mutex_lock(&dataMutex);
     isInitSleeping = true;
@@ -227,4 +236,34 @@ void Repository::sendAllData() {
     }
 
     pthread_mutex_unlock(&dataMutex);
+}
+
+
+bool Repository::isAlive(CORBA::String_var& identifier) {
+    pthread_mutex_lock(&livenessMutex);
+    bool result = liveNodes.find(string(identifier)) != liveNodes.end();
+    pthread_mutex_unlock(&livenessMutex);
+    return result;
+}
+
+void Repository::addLiveNode(CORBA::String_var& identifier) {
+    pthread_mutex_lock(&livenessMutex);
+    liveNodes.insert(string(identifier));
+    pthread_mutex_unlock(&livenessMutex);
+}
+
+void Repository::setLiveNodes(set<string>& liveNodes) {
+    pthread_mutex_lock(&livenessMutex);
+    this->liveNodes = liveNodes;
+    pthread_mutex_unlock(&livenessMutex);
+}
+
+// TODO: Lamport timestamps?
+void Repository::updateWorkCache(CORBA::String_var& identifier, WorkUnit& work, CORBA::String_var& originalOwner) {
+    pthread_mutex_lock(&livenessMutex);
+    if(strcmp(originalOwner, "") == 0) {
+        assignedWork.erase(string(originalOwner));  // De-zombify
+    }
+    assignedWork[string(identifier)] = work;
+    pthread_mutex_unlock(&livenessMutex);
 }
