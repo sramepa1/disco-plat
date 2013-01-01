@@ -11,8 +11,9 @@ class LeftNeighbourIface {
     friend class Network;
 
 public:
-    void NeighbourDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID) {
-        parent->enqueItem(new Left_NodeDied(reportingNodeID, deadNodeID));
+    void NeighbourDied(const ::disco_plat::nodeID& reportingNodeID,
+                       const SequenceTmpl< ::disco_plat::nodeID, MICO_TID_DEF> liveNodes) {
+        parent->enqueItem(new Left_NodeDied(reportingNodeID, liveNodes));
     }
 };
 

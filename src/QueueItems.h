@@ -39,14 +39,16 @@ public:
 //  LeftNeighbour
 
 class Left_NodeDied : public QueueItem {
-    const ::disco_plat::nodeID reportingNodeID;
-    const ::disco_plat::nodeID& deadNodeID;
+    const ::disco_plat::nodeID& reportingNodeID;
+    const SequenceTmpl< ::disco_plat::nodeID, MICO_TID_DEF> liveNodes;
 public:
-    Left_NodeDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID)
-        : reportingNodeID(reportingNodeID), deadNodeID(deadNodeID) {}
+    Left_NodeDied(const ::disco_plat::nodeID& reportingNodeID,
+                  const SequenceTmpl< ::disco_plat::nodeID, MICO_TID_DEF> liveNodes)
+        : reportingNodeID(reportingNodeID), liveNodes(liveNodes) {}
+
     void sendMe(NeighbourPair neighbours) {
         try {
-            neighbours.second->NodeDied(reportingNodeID, deadNodeID);
+            neighbours.second->NodeDied(reportingNodeID, liveNodes);
         } catch (CORBA::COMM_FAILURE&) {
             throw LeftNeighbourCommFailure();
         }

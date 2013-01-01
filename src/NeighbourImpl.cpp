@@ -255,19 +255,23 @@ void RightNeighbourImpl::BuildNetAndRequestData(const nodeID& newNeighbourID) {
 }
 
 
-void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, const nodeID& deadNodeID) {
+void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, SequenceTmpl<nodeID, MICO_TID_DEF> liveNodes) {
     cout << "Recieved message NodeDied from right neighbour" << endl;
-    networkModule->setDeadNodeID(reportingNodeID, deadNodeID);
+    SequenceTmpl<nodeID, MICO_TID_DEF> newSequence;
+    newSequence.length(liveNodes.length() + 1);
 
-    // TODO: check if I gave work to dead node
+    for(unsigned i = 0; i < liveNodes.length(); ++i) {
+        newSequence[i] = liveNodes[i];
+    }
+    newSequence[liveNodes.length()] = networkModule->getMyID();
 
-    networkModule->getMyLeftInterface().NeighbourDied(reportingNodeID, deadNodeID);
+    networkModule->setDataForRebuilding(reportingNodeID, newSequence);
+    networkModule->getMyLeftInterface().NeighbourDied(reportingNodeID, newSequence);
 }
 
 
 void RightNeighbourImpl::RebuildNetwork(const nodeID& newNeighbourID) {
     cout << "Recieved message RebuildNetwork from right neighbour" << endl;
-    networkModule->cleanQueue();
     networkModule->changeRightNeighbour(newNeighbourID);
     networkModule->repairNetwork();
 }

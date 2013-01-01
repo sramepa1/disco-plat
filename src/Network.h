@@ -46,7 +46,7 @@ class Network {
     void reportDeadLeftNode();
     void reportDeadRightNode();
 
-    disco_plat::nodeID deadNodeID;
+    SequenceTmpl<disco_plat::nodeID, MICO_TID_DEF> liveNodes;
     disco_plat::nodeID reportNodeID;
     bool networkBroken;
 
@@ -69,12 +69,11 @@ public:
     void changeRightNeighbour(const disco_plat::nodeID& newID);
     void changeLeftNeighbour(const disco_plat::nodeID& newID);
 
-    void cleanQueue();
-
     void repairNetwork() { networkBroken = false; }     // It's so simple... :-)
-    void setDeadNodeID(disco_plat::nodeID reportNodeID, disco_plat::nodeID deadNodeID) {
+    void setDataForRebuilding(disco_plat::nodeID reportNodeID,
+                              SequenceTmpl<disco_plat::nodeID, MICO_TID_DEF> liveNodes) {
         this->reportNodeID = reportNodeID;
-        this->deadNodeID = deadNodeID;
+        this->liveNodes = liveNodes;
     }
 
 private:

@@ -325,17 +325,16 @@ void Network::reportDeadLeftNode() {
     pthread_mutex_lock(&bindMutex);
     try {
 
-        if(leftID.identifier != deadNodeID.identifier) {
-            throw "EPIC Fail!!!";
-        }
-
         CORBA::Object_var tempObj;
         leftID = reportNodeID;
         BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)reportNodeID.identifier, leftRemoteObject,
                         RightNeighbour);
 
         leftRemoteObject->RebuildNetwork(myID);
+
+        // TODO: report that network is rebuilt
     } catch(...) {
+        // EPIC fail!!!
         sendBoomerangAndAbort(rightRemoteObject);
     }
     pthread_mutex_unlock(&bindMutex);
@@ -344,39 +343,16 @@ void Network::reportDeadLeftNode() {
 
 void Network::reportDeadRightNode() {
     if(!networkBroken) {
-        // TODO: check if I gave work to dead node
         try {
-            leftRemoteObject->NodeDied(getMyID(), getRightID());
+            SequenceTmpl<nodeID, MICO_TID_DEF> newSequence;
+            newSequence.length(1);
+            newSequence[0] = myID;
+
+            leftRemoteObject->NodeDied(getMyID(), newSequence);
             networkBroken = true;
         } catch(CORBA::COMM_FAILURE&) {
-            if(leftID.identifier != rightID.identifier) {
-                sendBoomerangAndAbort(rightRemoteObject);
-            }
-
-            cleanQueue();
+            // I am alone...
             createSingleNodeNetworkWithMutex();
         }
     }
-}
-
-void Network::cleanQueue() {
-    pthread_mutex_lock(&queueMutex);
-
-    QueueItem* current;
-    for(unsigned i = 0; i < sendQueue.size(); ++i) {
-        current = sendQueue.front();
-        sendQueue.pop_front();
-
-        if(typeid(*current) == typeid(Right_Boomerang)) {
-            Right_Boomerang* boomerang = (Right_Boomerang*)current;
-            if(boomerang->data.sourceNode.identifier == rightID.identifier) {
-                delete current;
-                continue;
-            }
-        }
-
-        sendQueue.push_back(current);
-    }
-
-    pthread_mutex_unlock(&queueMutex);
 }

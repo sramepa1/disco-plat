@@ -17,7 +17,7 @@ enum type { PING, WORK_REQUEST, WORK_ASSIGNMET, RESULT, TERMINATION_TOKEN, TERMI
 
 
 struct blob {
-    
+
     nodeID sourceNode;
     unsigned long computationID;
 
@@ -62,7 +62,7 @@ interface RightNeighbour {
     void BuildNetAndRequestData(in nodeID newNeighbourID);
 
     // Informs the circle that a node died. Message shall be resend in the original direction till it finds the other end.
-    void NodeDied(in nodeID reportingNodeID, in nodeID deadNodeID);
+    void NodeDied(in nodeID reportingNodeID, in sequence<nodeID> liveNodes);
 
     // Creates a new connection between nodes whose neighbours have died
     void RebuildNetwork(in nodeID newNeighbourID);

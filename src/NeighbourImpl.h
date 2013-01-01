@@ -15,7 +15,8 @@ class RightNeighbourImpl : virtual public POA_disco_plat::RightNeighbour {
 
 public:
     virtual void BuildNetAndRequestData(const ::disco_plat::nodeID& newNeighbourID);
-    virtual void NodeDied(const ::disco_plat::nodeID& reportingNodeID, const ::disco_plat::nodeID& deadNodeID);
+    virtual void NodeDied(const ::disco_plat::nodeID& reportingNodeID,
+                          SequenceTmpl< ::disco_plat::nodeID, MICO_TID_DEF> liveNodes);
     virtual void RebuildNetwork(const ::disco_plat::nodeID& newNeighbourID);
 };
 
