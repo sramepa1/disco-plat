@@ -18,10 +18,12 @@
 
 using namespace std;
 using namespace disco_plat;
+using namespace CORBA;
+using namespace PortableServer;
 
 #define BIND_AND_ASSIGN(objectIDL, addr, var, type) \
     tempObj = orb->bind(objectIDL, addr); \
-    if (CORBA::is_nil(tempObj)) { \
+    if (is_nil(tempObj)) { \
         cerr << "Node (port " << myID.identifier << ") - cannot bind to " << addr << endl; \
         throw "Cannot bind!"; \
     } \
@@ -76,21 +78,28 @@ Network::Network(int port, const char* networkInterface, const char* algorithm) 
     argvORB[1] = strdup("-ORBIIOPAddr");
     argvORB[2] = strdup(myID.identifier);
 
-    // initialization
-    orb = CORBA::ORB_init(argcORB, argvORB, "mico-local-orb");
-    CORBA::Object_var obj = orb->resolve_initial_references("RootPOA");
-    poa = PortableServer::POA::_narrow(obj);
+    try {
+        // ORB initialization
+        orb = ORB_init(argcORB, argvORB, "mico-local-orb");
+        Object_var obj = orb->resolve_initial_references("RootPOA");
+        poa = POA::_narrow(obj);
 
-    // creating left and right implementation of boundary interfaces
-    RightNeighbourImpl* rightObject = new RightNeighbourImpl();
-    poa->activate_object(rightObject);
-    rightObject->_this();
+        // creating left and right implementation of boundary interfaces
+        RightNeighbourImpl* rightObject = new RightNeighbourImpl();
+        poa->activate_object(rightObject);
+        rightObject->_this();
 
-    LeftNeighbourImpl* leftObject = new LeftNeighbourImpl();
-    poa->activate_object(leftObject);
-    leftObject->_this();
+        LeftNeighbourImpl* leftObject = new LeftNeighbourImpl();
+        poa->activate_object(leftObject);
+        leftObject->_this();
 
-    poa->the_POAManager()->activate();
+        poa->the_POAManager()->activate();
+    } catch(Exception& ex) {
+        stringstream exStr;
+        exStr << "Cannot initialize ORB deamon! The port " << port
+              << " is probably bound to another deamon or application!";
+        throw exStr.str().c_str();
+    }
 
     cout << "Node (address: " << myID.identifier << ") - initialized" << endl;
 }
@@ -104,7 +113,7 @@ void Network::start(const char* remoteAddr) {
             throw "Cannot create recieving thread!!!";
         }
 
-        CORBA::Object_var tempObj;
+        Object_var tempObj;
 
         if(remoteAddr == NULL) {
             // first node case
@@ -144,7 +153,7 @@ void Network::start(const char* remoteAddr) {
 }
 
 void Network::createSingleNodeNetwork() {
-    CORBA::Object_var tempObj;
+    Object_var tempObj;
 
     rightID = myID;
     BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", myID.identifier, rightRemoteObject, LeftNeighbour);
@@ -195,11 +204,11 @@ void* Network::recvThreadMain(void* ptr) {
         try {
             instance->orb->run();
             break;
-        } catch(CORBA::SystemException& ex) {
+        } catch(SystemException& ex) {
             cerr << "recv thread - Caught CORBA::SystemException." << endl;
             ex._print(cerr);
             cerr << endl;
-        } catch(CORBA::Exception& ex) {
+        } catch(Exception& ex) {
             cerr << "recv thread - Caught CORBA::Exception." << endl;
             ex._print(cerr);
             cerr << endl;
@@ -250,11 +259,11 @@ void* Network::sendThreadMain(void* ptr) {
                 pthread_mutex_unlock(&instance->bindMutex);
                 instance->reportDeadRightNode();
                 goto mutexJump;
-            } catch(CORBA::SystemException& ex) {
+            } catch(SystemException& ex) {
                 cerr << "send thread - Caught CORBA::SystemException." << endl;
                 ex._print(cerr);
                 cerr << endl;
-            } catch(CORBA::Exception& ex) {
+            } catch(Exception& ex) {
                 cerr << "send thread - Caught CORBA::Exception." << endl;
                 ex._print(cerr);
                 cerr << endl;
@@ -295,7 +304,7 @@ LeftNeighbourIface& Network::getMyLeftInterface() {
 void Network::changeRightNeighbour(const nodeID& newID) {
     pthread_mutex_lock(&bindMutex);
     try {
-        CORBA::Object_var tempObj;
+        Object_var tempObj;
         rightID = newID;
         BIND_AND_ASSIGN("IDL:disco_plat/LeftNeighbour:1.0", (const char*)newID.identifier, rightRemoteObject,
                         LeftNeighbour);
@@ -309,7 +318,7 @@ void Network::changeRightNeighbour(const nodeID& newID) {
 void Network::changeLeftNeighbour(const nodeID& newID) {
     pthread_mutex_lock(&bindMutex);
     try {
-        CORBA::Object_var tempObj;
+        Object_var tempObj;
         leftID = newID;
         BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)newID.identifier, leftRemoteObject,
                         RightNeighbour);
@@ -325,7 +334,7 @@ void Network::reportDeadLeftNode() {
     pthread_mutex_lock(&bindMutex);
     try {
 
-        CORBA::Object_var tempObj;
+        Object_var tempObj;
         leftID = reportNodeID;
         BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)reportNodeID.identifier, leftRemoteObject,
                         RightNeighbour);
@@ -350,7 +359,7 @@ void Network::reportDeadRightNode() {
 
             leftRemoteObject->NodeDied(getMyID(), newSequence);
             networkBroken = true;
-        } catch(CORBA::COMM_FAILURE&) {
+        } catch(COMM_FAILURE&) {
             // I am alone...
             createSingleNodeNetworkWithMutex();
         }
