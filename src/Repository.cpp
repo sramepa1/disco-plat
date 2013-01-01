@@ -83,7 +83,7 @@ unsigned int Repository::getAnyValidID() {
     return it->first;
 }
 
-void Repository::newData(unsigned int id, std::string algoName, std::string instanceText, bool broadcast) {
+void Repository::newData(unsigned int id, string algoName, string instanceText, bool broadcast) {
     pthread_mutex_lock(&dataMutex);
 
     if(!data.insert(make_pair(id, make_pair(algoName, instanceText))).second)
@@ -117,19 +117,37 @@ void Repository::newData(unsigned int id, std::string algoName, std::string inst
     }
 }
 
-void Repository::destroy(unsigned int id) {
+void Repository::destroyComputation(unsigned int id) {
+    pthread_mutex_lock(&dataMutex);
+    destroyInternal(id);
+    pthread_mutex_unlock(&dataMutex);
+}
+
+
+void Repository::setSurvivingComputations(set<unsigned int> computationIDs) {
     pthread_mutex_lock(&dataMutex);
 
-    data.erase(id);
-    map<unsigned int, pair<AlgoInstance*, Computation*> >::iterator it = algoCompCache.find(id);
+    map<unsigned int, pair<string, string> >::iterator it = data.begin();
+    while(it != data.end()) {
+        if(computationIDs.find(it->first) != computationIDs.end()) {
+            destroyInternal((it++)->first); // post-increment required as the iterator will be invalidated!
+        }
+    }
+
+    pthread_mutex_unlock(&dataMutex);
+}
+
+
+void Repository::destroyInternal(unsigned int computationID) {
+    data.erase(computationID);
+    map<unsigned int, pair<AlgoInstance*, Computation*> >::iterator it = algoCompCache.find(computationID);
     if(it != algoCompCache.end()) {
         delete it->second.first;
         delete it->second.second;
         algoCompCache.erase(it);
     }
-
-    pthread_mutex_unlock(&dataMutex);
 }
+
 
 pair<AlgoInstance*, Computation*> Repository::getAlgoComp(unsigned int id) {
     map<unsigned int, pair<AlgoInstance*, Computation*> >::iterator it = algoCompCache.find(id);
@@ -160,7 +178,7 @@ pair<AlgoInstance*, Computation*> Repository::getAlgoComp(unsigned int id) {
 }
 
 
-void Repository::start(unsigned int id, bool localStart) {
+void Repository::startComputation(unsigned int id, bool localStart) {
     pair<AlgoInstance*, Computation*> algoComp = getAlgoComp(id);
     algoComp.second->start(localStart);
 }
@@ -239,16 +257,16 @@ void Repository::sendAllData() {
 }
 
 
-bool Repository::isAlive(CORBA::String_var& identifier) {
+bool Repository::isAlive(string& identifier) {
     pthread_mutex_lock(&livenessMutex);
-    bool result = liveNodes.find(string(identifier)) != liveNodes.end();
+    bool result = liveNodes.find(identifier) != liveNodes.end();
     pthread_mutex_unlock(&livenessMutex);
     return result;
 }
 
-void Repository::addLiveNode(CORBA::String_var& identifier) {
+void Repository::addLiveNode(string& identifier) {
     pthread_mutex_lock(&livenessMutex);
-    liveNodes.insert(string(identifier));
+    liveNodes.insert(identifier);
     pthread_mutex_unlock(&livenessMutex);
 }
 
@@ -259,11 +277,11 @@ void Repository::setLiveNodes(set<string>& liveNodes) {
 }
 
 // TODO: Lamport timestamps?
-void Repository::updateWorkCache(CORBA::String_var& identifier, WorkUnit& work, CORBA::String_var& originalOwner) {
+void Repository::updateWorkCache(string& identifier, WorkUnit& work, string& originalOwner) {
     pthread_mutex_lock(&livenessMutex);
-    if(strcmp(originalOwner, "") == 0) {
-        assignedWork.erase(string(originalOwner));  // De-zombify
+    if(originalOwner.empty()) {
+        assignedWork.erase(originalOwner);  // De-zombify
     }
-    assignedWork[string(identifier)] = work;
+    assignedWork[identifier] = work;
     pthread_mutex_unlock(&livenessMutex);
 }

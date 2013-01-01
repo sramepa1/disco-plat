@@ -29,17 +29,20 @@ public:
 
     std::pair<AlgoInstance*, Computation*> getAlgoComp(unsigned int id);
 
-    void start(unsigned int id, bool localStart);
+    void startComputation(unsigned int id, bool localStart);
 
     // frees resources and marks ID as invalid
-    void destroy(unsigned int id);
+    void destroyComputation(unsigned int id);
+
+    // destroys all computations not present in the given set (zombie-killing)
+    void setSurvivingComputations(std::set<unsigned int> computationIDs);
 
 
     ///////// Node liveness and work cache
 
-    bool isAlive(CORBA::String_var& identifier);
+    bool isAlive(std::string& identifier);
 
-    void addLiveNode(CORBA::String_var& identifier);
+    void addLiveNode(std::string& identifier);
 
     // Can be changed to CORBA sequence<string> if needed
     void setLiveNodes(std::set<std::string>& liveNodes);
@@ -47,7 +50,7 @@ public:
 
     // TODO: Lamport timestamps?
     // Pass empty string as originalOwner if this is not a de-zombification update
-    void updateWorkCache(CORBA::String_var& identifier, WorkUnit& work, CORBA::String_var& originalOwner);
+    void updateWorkCache(std::string& identifier, WorkUnit& work, std::string& originalOwner);
 
     ///////// interface for calling from networ init only
 
@@ -80,6 +83,8 @@ private:
     void waitThread();
 
     bool isSingleNode() { return networkModule->getLeftID().identifier == networkModule->getMyID().identifier; }
+
+    void destroyInternal(unsigned int computationID);
 };
 
 #endif // REPOSITORY_H

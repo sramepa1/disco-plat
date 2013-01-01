@@ -122,10 +122,10 @@ int main(int argc, char** argv) {
         bool localStart = address == NULL;
 
         do {
-            repo->start(computationID, localStart);
+            repo->startComputation(computationID, localStart);
 
             localStart = false;
-            repo->destroy(computationID);
+            repo->destroyComputation(computationID);
             computationID = repo->getAnyValidID();
 
         } while(computationID != INVALID_COMPUTATION_ID);
