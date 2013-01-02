@@ -3,6 +3,7 @@
 
 #include "Algo.h"
 #include "Computation.h"
+#include "Interface.h"
 
 class Synchronization;
 
@@ -90,6 +91,8 @@ public:
     void sendAllData();
     void broadcastMyID();
 
+    void informSearchID(unsigned int searchID, disco_plat::nodeID nodeID);
+
     uint64_t timeIncrement() {
         pthread_mutex_lock(&timeMutex);
         uint64_t tmp = ++lamportTime;
@@ -120,6 +123,10 @@ private:
     bool isFreeIDSleeping;
     bool liveNodesConsistent;
 
+    bool idSearchColision;
+    std::list<disco_plat::nodeID> idSearchColisionQueue;
+
+
     unsigned int currentID;
     unsigned int maxID;
 
@@ -136,6 +143,7 @@ private:
     void waitThread();
 
     void destroyInternal(unsigned int computationID);
+
 
 };
 

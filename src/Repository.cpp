@@ -35,6 +35,7 @@ Repository::Repository(string outputFileName) : liveNodesConsistent(false), lamp
 
     isInitSleeping = false;
     isFreeIDSleeping = false;
+    idSearchColision = false;
 
     if(outputFileName.empty()) {
         outStream = &cout;
@@ -96,6 +97,19 @@ unsigned int Repository::getFreeID() {
     isFreeIDSleeping = true;
 
     pthread_cond_wait(&initCondition, &dataMutex);
+
+    if(idSearchColision) {
+        while(!idSearchColisionQueue.empty()) {
+            blob message;
+            message.sourceNode = idSearchColisionQueue.front();
+            message.computationID = BLOB_CID_GLOBAL_ID;
+            message.messageType = FREE_ID_SEARCH;
+            message.slotA = maxID;
+
+            rightNb->Boomerang(message);
+            idSearchColisionQueue.pop_front();
+        }
+    }
 
     isFreeIDSleeping = false;
     pthread_mutex_unlock(&dataMutex);
@@ -415,3 +429,33 @@ void Repository::setLiveNodes(const set<string>& liveNodes) {
 
     pthread_mutex_unlock(&livenessMutex);
 }
+
+
+void Repository::informSearchID(unsigned int searchID, nodeID nodeID) {
+    pthread_mutex_lock(&dataMutex);
+
+    if(isFreeIDSleeping) {
+        idSearchColision = true;
+
+        string me(networkModule->getMyID().identifier);
+        string competitor(nodeID.identifier);
+
+        if(me.compare(competitor) > 0) {
+            idSearchColisionQueue.push_back(nodeID);
+            pthread_mutex_unlock(&dataMutex);
+            return;
+        }
+    }
+
+    pthread_mutex_unlock(&dataMutex);
+
+    blob message;
+    message.sourceNode = nodeID;
+    message.computationID = BLOB_CID_GLOBAL_ID;
+    message.messageType = FREE_ID_SEARCH;
+    message.slotA = maxID > searchID ? maxID : searchID ;
+
+    rightNb->Boomerang(message);
+
+}
+

@@ -65,10 +65,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 repo->awakeFreeID(data.slotA);
 
             } else {
-                //change to my maxID if greater
-                if(repo->getMaxID() > data.slotA) {
-                    myData.slotA = repo->getMaxID();
-                }
+                repo->informSearchID(data.slotA, data.sourceNode);
             }
 
             break;
