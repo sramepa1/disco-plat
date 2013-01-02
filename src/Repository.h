@@ -4,6 +4,8 @@
 #include "Algo.h"
 #include "Computation.h"
 
+class Synchronization;
+
 #include <map>
 #include <set>
 #include <pthread.h>
@@ -24,6 +26,9 @@ public:
 
     void init();
 
+
+    ///////// Global resources
+
     uint64_t getTime() {
         pthread_mutex_lock(&timeMutex);
         uint64_t tmp = lamportTime;
@@ -33,8 +38,14 @@ public:
 
     std::ostream& getOutput();
 
+    void lockCurrentSyncModule() { pthread_mutex_lock(&syncMutex); }
+    Synchronization* getCurrentSyncModule() { return currentSyncModule; }
+    void unlockCurrentSyncModule() { pthread_mutex_unlock(&syncMutex); }
+
+
     ///////// ID and computation data
 
+    unsigned int getCurrentComputationID();
     unsigned int getFreeID();
     unsigned int getAnyValidID();
 
@@ -53,15 +64,15 @@ public:
 
     ///////// Node liveness and work cache
 
-    size_t getLiveNodeCount() { return liveNodes.size(); }
+    size_t getLiveNodeCount();
 
     bool isAlive(const std::string& identifier);
 
+    std::set<std::string> getLiveNodes();
+
     void addLiveNode(const std::string &identifier);
 
-    // Can be changed to CORBA sequence<string> if needed
     void setLiveNodes(const std::set<std::string>& liveNodes);
-
 
 
     ///////// interface for calling from networ init only
@@ -97,15 +108,19 @@ private:
     pthread_mutex_t timeMutex;
     pthread_mutex_t dataMutex;
     pthread_mutex_t livenessMutex;
+    pthread_mutex_t syncMutex;
     pthread_cond_t initCondition;
 
     bool isInitSleeping;
     bool isFreeIDSleeping;
 
+    unsigned int currentID;
     unsigned int maxID;
 
     LeftNeighbourIface* leftNb;
     RightNeighbourIface* rightNb;
+
+    Synchronization* currentSyncModule;
 
     std::ostream* outStream;
     bool isOutStreamOwner;

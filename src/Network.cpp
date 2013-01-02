@@ -393,7 +393,7 @@ void Network::reportDeadRightNode() {
             newCompSequence.length(1);
 
             newNodeSequence[0] = myID;
-            newCompSequence[0] = currentSyncModule->getComputationID();
+            newCompSequence[0] = repo->getCurrentComputationID();
 
             leftRemoteObject->NodeDied(getMyID(), newNodeSequence, newCompSequence);
             networkBroken = true;
@@ -404,7 +404,7 @@ void Network::reportDeadRightNode() {
             repo->setLiveNodes(liveNodesSet);
 
             set<unsigned> compIDSet;
-            compIDSet.insert(currentSyncModule->getComputationID());
+            compIDSet.insert(repo->getCurrentComputationID());
             repo->setSurvivingComputations(compIDSet);
 
             createSingleNodeNetworkWithMutex();

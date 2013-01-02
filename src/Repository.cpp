@@ -24,6 +24,7 @@ Repository::Repository(string outputFileName) : lamportTime(0) {
     pthread_mutex_init(&timeMutex, NULL);
     pthread_mutex_init(&dataMutex, NULL);
     pthread_mutex_init(&livenessMutex, NULL);
+    pthread_mutex_init(&syncMutex, NULL);
     pthread_cond_init(&initCondition, NULL);
 
     isInitSleeping = false;
@@ -47,6 +48,7 @@ Repository::~Repository() {
     pthread_mutex_destroy(&timeMutex);
     pthread_mutex_destroy(&dataMutex);
     pthread_mutex_destroy(&livenessMutex);
+    pthread_mutex_destroy(&syncMutex);
     pthread_cond_destroy(&initCondition);
 
     if(isOutStreamOwner) {
@@ -56,9 +58,16 @@ Repository::~Repository() {
 
 ostream& Repository::getOutput() {
     pthread_mutex_lock(&timeMutex);
-    *outStream << '[' << hex << setw(16) << setfill('0') << lamportTime << "] " << dec;
+    *outStream << '[' << hex << setw(16) << setfill('0') << uppercase << lamportTime << "] " << dec;
     pthread_mutex_unlock(&timeMutex);
     return *outStream;
+}
+
+unsigned int Repository::getCurrentComputationID() {
+    lockCurrentSyncModule();
+    unsigned int value = currentID;
+    unlockCurrentSyncModule();
+    return value;
 }
 
 unsigned int Repository::getFreeID() {
@@ -208,10 +217,20 @@ pair<AlgoInstance*, Computation*> Repository::getAlgoComp(unsigned int id) {
 
 
 void Repository::startComputation(unsigned int id, bool localStart) {
+
     pair<AlgoInstance*, Computation*> algoComp = getAlgoComp(id);
-    currentSyncModule = algoComp.second->getSync(); // TODO: replace with a mutexed setter in networkModule
+
+    lockCurrentSyncModule();
+    currentSyncModule = algoComp.second->getSync();
+    currentID = id;
+    unlockCurrentSyncModule();
+
     algoComp.second->start(localStart);
+
+    lockCurrentSyncModule();
     currentSyncModule = NULL;
+    currentID = INVALID_COMPUTATION_ID;
+    unlockCurrentSyncModule();
 }
 
 
@@ -329,12 +348,25 @@ void Repository::broadcastMyID() {
     rightNb->Boomerang(message);
 }
 
+size_t Repository::getLiveNodeCount() {
+    pthread_mutex_lock(&livenessMutex);
+    size_t tmp = liveNodes.size();
+    pthread_mutex_unlock(&livenessMutex);
+    return tmp;
+}
 
 bool Repository::isAlive(const string& identifier) {
     pthread_mutex_lock(&livenessMutex);
     bool result = liveNodes.find(identifier) != liveNodes.end();
     pthread_mutex_unlock(&livenessMutex);
     return result;
+}
+
+set<string> Repository::getLiveNodes() {
+    pthread_mutex_lock(&livenessMutex);
+    set<string> tmp = liveNodes;
+    pthread_mutex_unlock(&livenessMutex);
+    return tmp;
 }
 
 void Repository::addLiveNode(const string& identifier) {

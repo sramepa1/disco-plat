@@ -154,6 +154,9 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
     }
 
     ////////// Synchronizing boomerang types
+    repo->lockCurrentSyncModule();
+    Synchronization* currentSyncModule = repo->getCurrentSyncModule();
+
     if(currentSyncModule != NULL) {
 
         switch(data.messageType) {
@@ -286,6 +289,8 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
     }
 
+    repo->unlockCurrentSyncModule();
+
     if(sendFurther) {
         RightNeighbourIface& right = networkModule->getMyRightInterface();
         right.Boomerang(myData);
@@ -300,7 +305,6 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         repo->getOutput() << "Boomerang ends here. No sending." << endl;
     }
 #endif
-
 }
 
 
@@ -342,7 +346,7 @@ void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, SequenceTmpl<no
         newCompSequence[i] = compIDs[i];
     }
     newNodeSequence[liveNodes.length()] = networkModule->getMyID();
-    newCompSequence[liveNodes.length()] = currentSyncModule->getComputationID();
+    newCompSequence[liveNodes.length()] = repo->getCurrentComputationID();
 
     networkModule->setDataForRebuilding(reportingNodeID, newNodeSequence, newCompSequence);
     networkModule->getMyLeftInterface().NeighbourDied(reportingNodeID, newNodeSequence, newCompSequence);
