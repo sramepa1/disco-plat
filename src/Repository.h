@@ -64,8 +64,13 @@ public:
 
     ///////// Node liveness and work cache
 
+    bool isLiveNodeCacheConsistent();
+
+    void setLiveNodeCacheConsistency(bool consistent);
+
     size_t getLiveNodeCount();
 
+    // Always returns true if cache is marked as inconsistent
     bool isAlive(const std::string& identifier);
 
     std::set<std::string> getLiveNodes();
@@ -113,6 +118,7 @@ private:
 
     bool isInitSleeping;
     bool isFreeIDSleeping;
+    bool liveNodesConsistent;
 
     unsigned int currentID;
     unsigned int maxID;

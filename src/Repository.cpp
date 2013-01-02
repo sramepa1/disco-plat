@@ -17,7 +17,7 @@ using namespace disco_plat;
 
 Repository* repo;
 
-Repository::Repository(string outputFileName) : lamportTime(0) {
+Repository::Repository(string outputFileName) : liveNodesConsistent(false), lamportTime(0) {
     leftNb = &networkModule->getMyLeftInterface();
     rightNb = &networkModule->getMyRightInterface();
 
@@ -348,6 +348,19 @@ void Repository::broadcastMyID() {
     rightNb->Boomerang(message);
 }
 
+bool Repository::isLiveNodeCacheConsistent() {
+    pthread_mutex_lock(&livenessMutex);
+    bool result = liveNodesConsistent;
+    pthread_mutex_unlock(&livenessMutex);
+    return result;
+}
+
+void Repository::setLiveNodeCacheConsistency(bool consistent) {
+    pthread_mutex_lock(&livenessMutex);
+    liveNodesConsistent = consistent;
+    pthread_mutex_unlock(&livenessMutex);
+}
+
 size_t Repository::getLiveNodeCount() {
     pthread_mutex_lock(&livenessMutex);
     size_t tmp = liveNodes.size();
@@ -357,7 +370,7 @@ size_t Repository::getLiveNodeCount() {
 
 bool Repository::isAlive(const string& identifier) {
     pthread_mutex_lock(&livenessMutex);
-    bool result = liveNodes.find(identifier) != liveNodes.end();
+    bool result = !liveNodesConsistent || liveNodes.find(identifier) != liveNodes.end();
     pthread_mutex_unlock(&livenessMutex);
     return result;
 }

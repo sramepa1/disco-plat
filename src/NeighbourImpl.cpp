@@ -90,6 +90,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 }
 
                 if(originMe && s1.compare(networkModule->getMyID().identifier) == 0) {
+                    repo->setLiveNodeCacheConsistency(true);
                     repo->awakeInit();
                 }
 
@@ -141,12 +142,12 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
     }
 
 
-    ////////// killing zombie bumerang
+    ////////// killing zombie boomerang
     {
         string s(data.sourceNode.identifier);
         if(!repo->isAlive(s)) {
 #ifdef VERBOSE
-            repo->getOutput() << "Dropping dead boomerang with orogin " << data.sourceNode.identifier << endl;
+            repo->getOutput() << "Dropping dead boomerang with origin " << data.sourceNode.identifier << endl;
 #endif
             return;
         }
