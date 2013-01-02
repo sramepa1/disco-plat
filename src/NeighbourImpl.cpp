@@ -2,6 +2,7 @@
 #include "NeighbourIface.h"
 
 #include "globals.h"
+#include "NeighbourIface.h"
 #include "Network.h"
 #include "Repository.h"
 #include "Synchronization.h"
@@ -31,6 +32,10 @@ void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out ol
 void LeftNeighbourImpl::Boomerang(const blob& data) {
     repo->getOutput() << "Recieved message Boomerang from left neighbour" << endl;
 
+    // time update
+    repo->timeColision(data.timestamp);
+
+    // circle tracing
     blob myData(data);
 
     bool originMe = false;
@@ -46,7 +51,89 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         originRightNeighbour = true;
     }
 
-    ////////// Fully started
+
+    ////////// General boomerang types
+    switch(data.messageType) {
+
+        case FREE_ID_SEARCH :
+
+#ifdef VERBOSE
+            repo->getOutput() << "Message type is FREE_ID_SEARCH" << endl;
+#endif
+
+            if(originMe) {
+                //wake repository
+                repo->awakeFreeID(data.slotA);
+
+            } else {
+                //change to my maxID if greater
+                if(repo->getMaxID() > data.slotA) {
+                    myData.slotA = repo->getMaxID();
+                }
+            }
+
+            break;
+
+
+        case NODE_ANNOUNCEMENT :
+
+#ifdef VERBOSE
+            repo->getOutput() << "Message type is NODE_ANNOUNCEMENT" << endl;
+#endif
+
+            {
+                string s1(data.dataStringA);
+                repo->addLiveNode(s1);
+
+                if(data.slotA == 2) {
+                    string s2(data.dataStringB);
+                    repo->addLiveNode(s2);
+                }
+
+                if(originMe && s1.compare(networkModule->getMyID().identifier) == 0) {
+                    repo->awakeInit();
+                }
+
+            }
+
+            break;
+
+
+        case INSTANCE_ANNOUNCEMENT :
+
+#ifdef VERBOSE
+            repo->getOutput() << "Message type is INSTANCE_ANNOUNCEMENT" << endl;
+#endif
+
+            repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
+
+            if(data.slotA == BLOB_SA_IA_INIT_RESUME) {
+                repo->broadcastMyID();
+            }
+
+            if(originRightNeighbour) {
+                sendFurther = false;
+            }
+
+            break;
+
+        default :
+            break;
+    }
+
+
+    ////////// killing zombie bumerang
+    {
+        string s(data.sourceNode.identifier);
+        if(!repo->isAlive(s)) {
+#ifdef VERBOSE
+            repo->getOutput() << "Dropping dead boomerang with orogin " << data.sourceNode.identifier << endl;
+#endif
+            return;
+        }
+    }
+
+    ////////// Synchronizing boomerang types
     if(currentSyncModule != NULL) {
 
         switch(data.messageType) {
@@ -186,76 +273,6 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         }
 
     }
-
-    ////////// Not yet fully started
-    switch(data.messageType) {
-
-        case FREE_ID_SEARCH :
-
-#ifdef VERBOSE
-            repo->getOutput() << "Message type is FREE_ID_SEARCH" << endl;
-#endif
-
-            if(originMe) {
-                //wake repository
-                repo->awakeFreeID(data.slotA);
-
-            } else {
-                //change to my maxID if greater
-                if(repo->getMaxID() > data.slotA) {
-                    myData.slotA = repo->getMaxID();
-                }
-            }
-
-            break;
-
-
-        case NODE_ANNOUNCEMENT :
-
-#ifdef VERBOSE
-            repo->getOutput() << "Message type is NODE_ANNOUNCEMENT" << endl;
-#endif
-
-            {
-                string s1(data.dataStringA);
-                repo->addLiveNode(s1);
-
-                if(data.slotA == 2) {
-                    string s2(data.dataStringB);
-                    repo->addLiveNode(s2);
-                }
-
-                if(originMe && s1.compare(networkModule->getMyID().identifier) == 0) {
-                    repo->awakeInit();
-                }
-
-            }
-
-            break;
-
-
-        case INSTANCE_ANNOUNCEMENT :
-
-#ifdef VERBOSE
-            repo->getOutput() << "Message type is INSTANCE_ANNOUNCEMENT" << endl;
-#endif
-
-            repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
-
-            if(data.slotA == BLOB_SA_IA_INIT_RESUME) {
-                repo->broadcastMyID();
-            }
-
-            if(originRightNeighbour) {
-                sendFurther = false;
-            }
-
-            break;
-
-        default :
-            break;
-    }
-
 
     if(sendFurther) {
         RightNeighbourIface& right = networkModule->getMyRightInterface();

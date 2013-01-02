@@ -17,10 +17,11 @@ using namespace disco_plat;
 
 Repository* repo;
 
-Repository::Repository(string outputFileName) {
+Repository::Repository(string outputFileName) : lamportTime(0) {
     leftNb = &networkModule->getMyLeftInterface();
     rightNb = &networkModule->getMyRightInterface();
 
+    pthread_mutex_init(&timeMutex, NULL);
     pthread_mutex_init(&dataMutex, NULL);
     pthread_mutex_init(&livenessMutex, NULL);
     pthread_cond_init(&initCondition, NULL);
@@ -43,6 +44,7 @@ Repository::Repository(string outputFileName) {
 }
 
 Repository::~Repository() {
+    pthread_mutex_destroy(&timeMutex);
     pthread_mutex_destroy(&dataMutex);
     pthread_mutex_destroy(&livenessMutex);
     pthread_cond_destroy(&initCondition);
@@ -53,8 +55,9 @@ Repository::~Repository() {
 }
 
 ostream& Repository::getOutput() {
-    // TODO: Replace 0x42 by logical clock value
-    *outStream << '[' << hex << setw(16) << setfill('0') << (uint64_t)0x42 << "] " << dec;
+    pthread_mutex_lock(&timeMutex);
+    *outStream << '[' << hex << setw(16) << setfill('0') << lamportTime << "] " << dec;
+    pthread_mutex_unlock(&timeMutex);
     return *outStream;
 }
 

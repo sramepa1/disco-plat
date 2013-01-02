@@ -21,7 +21,7 @@ struct blob {
 
     nodeID sourceNode;
     unsigned long computationID;
-
+    unsigned long long timestamp;
     type messageType;
 
     sequence<char> charDataSequence;

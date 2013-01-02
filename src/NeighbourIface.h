@@ -1,6 +1,8 @@
 #ifndef NEIGHBOURIFACE_H
 #define NEIGHBOURIFACE_H
 
+#include "Repository.h"
+#include "globals.h"
 #include "Network.h"
 #include "QueueItems.h"
 
@@ -25,7 +27,8 @@ class RightNeighbourIface {
     friend class Network;
 
 public:
-    void Boomerang(const ::disco_plat::blob& data) {
+    void Boomerang(::disco_plat::blob& data) {
+        data.timestamp = repo->timeIncrement();
         parent->enqueItem(new Right_Boomerang(data));
     }
     void AbortingBoomerang() {

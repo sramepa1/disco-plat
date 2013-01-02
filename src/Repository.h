@@ -3,7 +3,6 @@
 
 #include "Algo.h"
 #include "Computation.h"
-#include "Interface.h"
 
 #include <map>
 #include <set>
@@ -13,6 +12,10 @@
 
 #define INVALID_COMPUTATION_ID 0
 
+class LeftNeighbourIface;
+class RightNeighbourIface;
+
+
 class Repository
 {
 public:
@@ -20,6 +23,13 @@ public:
     ~Repository();
 
     void init();
+
+    uint64_t getTime() {
+        pthread_mutex_lock(&timeMutex);
+        uint64_t tmp = lamportTime;
+        pthread_mutex_unlock(&timeMutex);
+        return tmp;
+    }
 
     std::ostream& getOutput();
 
@@ -64,12 +74,27 @@ public:
     void sendAllData();
     void broadcastMyID();
 
+    uint64_t timeIncrement() {
+        pthread_mutex_lock(&timeMutex);
+        uint64_t tmp = ++lamportTime;
+        pthread_mutex_unlock(&timeMutex);
+        return tmp;
+    }
+
+    void timeColision(uint64_t time) {
+        pthread_mutex_lock(&timeMutex);
+        lamportTime = (time > lamportTime ? time : lamportTime) + 1;
+        pthread_mutex_unlock(&timeMutex);
+    }
+
+
 private:
     std::map<unsigned int, std::pair<std::string, std::string> > data;
     std::map<unsigned int, std::pair<AlgoInstance*, Computation*> > algoCompCache;
 
     std::set<std::string> liveNodes;
 
+    pthread_mutex_t timeMutex;
     pthread_mutex_t dataMutex;
     pthread_mutex_t livenessMutex;
     pthread_cond_t initCondition;
@@ -85,11 +110,12 @@ private:
     std::ostream* outStream;
     bool isOutStreamOwner;
 
+    uint64_t lamportTime;
+
     void waitThread();
 
-    bool isSingleNode() { return networkModule->getLeftID().identifier == networkModule->getMyID().identifier; }
-
     void destroyInternal(unsigned int computationID);
+
 };
 
 #endif // REPOSITORY_H
