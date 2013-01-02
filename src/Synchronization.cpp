@@ -343,10 +343,10 @@ void Synchronization::informAssignment(blob data) {
 void Synchronization::updateWorkCache(string& identifier, uint64_t time, WorkUnit& work, string& originalOwner) {
 
 #ifdef VERBOSE
-    repo->getOutput() << "Updating work cache fo " << identifier << endl;
+    repo->getOutput() << "Updating work cache for " << identifier << endl;
 #endif
 
-    if(originalOwner.empty()) {
+    if(!originalOwner.empty()) {
 #ifdef VERBOSE
         repo->getOutput() << "Dezombifying work cache from " << originalOwner << endl;
 #endif

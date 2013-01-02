@@ -190,10 +190,6 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                     {
                         currentSyncModule->informRequest(data.sourceNode);
                         sendFurther = false;
-
-#ifdef VERBOSE
-                        repo->getOutput() << "Message WORK_REQUEST accepted for processing" << endl;
-#endif
                     }
                 }
 
@@ -206,13 +202,10 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 #endif
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
-                    // is that work for me
-                    if(data.asignee.identifier == networkModule->getMyID().identifier) {
+                    // is that work for me  
+                    if(strcmp(data.asignee.identifier, networkModule->getMyID().identifier) == 0) {
                         // take it
                         currentSyncModule->informAssignment(data);
-#ifdef VERBOSE
-                        repo->getOutput() << "Message WORK_ASSIGNMET accepted for processing" << endl;
-#endif
                     } else {
                         // update cache
                         string identifier(data.asignee.identifier);
@@ -227,10 +220,6 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                     }
                 }
 
-                if(originRightNeighbour) {
-                    sendFurther = false;
-                }
-
                 break;
 
             case RESULT :
@@ -241,9 +230,6 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
                     currentSyncModule->informResult(data);
-#ifdef VERBOSE
-                    repo->getOutput() << "Message RESULT accepted for processing" << endl;
-#endif
                 }
 
                 if(originRightNeighbour) {
