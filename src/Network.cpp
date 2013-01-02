@@ -71,7 +71,9 @@ Network::Network(int port, const char* networkInterface, const char* algorithm) 
     myID.identifier = thisAddrStr.str().c_str();
     myID.algorithm = algorithm;
 
+    #ifdef VERBOSE
     cout << "Node (address: " << myID.identifier << ") - initializing" << endl;
+    #endif
     reportNodeID = myID;
 
     int argcORB = 3;
@@ -104,7 +106,9 @@ Network::Network(int port, const char* networkInterface, const char* algorithm) 
         throw exStr.str().c_str();
     }
 
+    #ifdef VERBOSE
     cout << "Node (address: " << myID.identifier << ") - initialized" << endl;
+    #endif
 }
 
 void Network::start(const char* remoteAddr) {
@@ -177,7 +181,9 @@ void Network::createSingleNodeNetworkWithMutex() {
 }
 
 Network::~Network() {
+    #ifdef VERBOSE
     cout << "Node (address: " << myID.identifier << ") - closing network module" << endl;
+    #endif
 
     sendThreadRunning = false;
     orb->shutdown(TRUE);
@@ -188,7 +194,9 @@ Network::~Network() {
     pthread_mutex_destroy(&queueMutex);
     pthread_mutex_destroy(&bindMutex);
 
+    #ifdef VERBOSE
     cout << "Node (address: " << myID.identifier << ") - network module closed" << endl;
+    #endif
 }
 
 void Network::enqueItem(QueueItem* item) {
@@ -201,7 +209,9 @@ void Network::enqueItem(QueueItem* item) {
 void* Network::recvThreadMain(void* ptr) {
 
     Network* instance = (Network*)ptr;
+    #ifdef VERBOSE
     cout << "Node (address: " << instance->myID.identifier << ") - recv thread started" << endl;
+    #endif
 
     while(true) {
         try {
@@ -229,7 +239,9 @@ void* Network::sendThreadMain(void* ptr) {
     bool queueIsEmpty;
     QueueItem* current;
 
+    #ifdef VERBOSE
     cout << "Node (address: " << instance->myID.identifier << ") - send thread started" << endl;
+    #endif
 
     while(instance->sendThreadRunning) {
         usleep(100000);

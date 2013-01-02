@@ -21,7 +21,7 @@ public:
 
     void init();
 
-    std::ostream& getOutput() { return *outStream; }
+    std::ostream& getOutput();
 
     ///////// ID and computation data
 

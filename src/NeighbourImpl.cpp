@@ -17,7 +17,7 @@ using namespace CORBA;
 //  LeftNeighbour
 
 void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
-    cout << "Recieved message ConnectAsLeftNode from left neighbour" << endl;
+    repo->getOutput() << "Recieved message ConnectAsLeftNode from left neighbour" << endl;
 
     if(strlen(newNodeID.algorithm) !=0 && strcmp(newNodeID.algorithm, networkModule->getMyID().algorithm) != 0) {
         throw ConnectionError("Used algorithms does not match!");
@@ -29,7 +29,7 @@ void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out ol
 
 
 void LeftNeighbourImpl::Boomerang(const blob& data) {
-    cout << "Recieved message Boomerang from left neighbour" << endl;
+    repo->getOutput() << "Recieved message Boomerang from left neighbour" << endl;
 
     blob myData(data);
 
@@ -53,7 +53,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case PING :
 
 #ifdef VERBOSE
-                cout << "Message type is PING" << endl;
+                repo->getOutput() << "Message type is PING" << endl;
 #endif
 
                 break;
@@ -61,7 +61,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case WORK_REQUEST :
 
 #ifdef VERBOSE
-                cout << "Message type is WORK_REQUEST" << endl;
+                repo->getOutput() << "Message type is WORK_REQUEST" << endl;
 #endif
 
                 // TODO recovery and cache
@@ -79,7 +79,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                         sendFurther = false;
 
 #ifdef VERBOSE
-                        cout << "Message WORK_REQUEST accepted for processing" << endl;
+                        repo->getOutput() << "Message WORK_REQUEST accepted for processing" << endl;
 #endif
                     }
                 }
@@ -89,7 +89,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case WORK_ASSIGNMET :
 
 #ifdef VERBOSE
-                cout << "Message type is WORK_ASSIGNMET" << endl;
+                repo->getOutput() << "Message type is WORK_ASSIGNMET" << endl;
 #endif
 
                 // TODO recovery and cache
@@ -97,7 +97,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 if(data.asignee.identifier == networkModule->getMyID().identifier) {
                     currentSyncModule->informAssignment(data);
 #ifdef VERBOSE
-                    cout << "Message WORK_ASSIGNMET accepted for processing" << endl;
+                    repo->getOutput() << "Message WORK_ASSIGNMET accepted for processing" << endl;
 #endif
                 }
 
@@ -110,13 +110,13 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case RESULT :
 
 #ifdef VERBOSE
-                cout << "Message type is RESULT" << endl;
+                repo->getOutput() << "Message type is RESULT" << endl;
 #endif
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
                     currentSyncModule->informResult(data);
 #ifdef VERBOSE
-                    cout << "Message RESULT accepted for processing" << endl;
+                    repo->getOutput() << "Message RESULT accepted for processing" << endl;
 #endif
                 }
 
@@ -129,7 +129,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case TERMINATION_TOKEN :
 
 #ifdef VERBOSE
-                cout << "Message type is TERMINATION_TOKEN" << endl;
+                repo->getOutput() << "Message type is TERMINATION_TOKEN" << endl;
 #endif
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
@@ -147,7 +147,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case TERMINATE :
 
 #ifdef VERBOSE
-                cout << "Message type is TERMINATE" << endl;
+                repo->getOutput() << "Message type is TERMINATE" << endl;
 #endif
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
@@ -163,7 +163,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case NETWORK_REBUILT: {
 
 #ifdef VERBOSE
-                cout << "Message type is NETWORK_REBUILT" << endl;
+                repo->getOutput() << "Message type is NETWORK_REBUILT" << endl;
 #endif
 
                 set<string> liveNodesSet;
@@ -193,7 +193,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         case FREE_ID_SEARCH :
 
 #ifdef VERBOSE
-            cout << "Message type is FREE_ID_SEARCH" << endl;
+            repo->getOutput() << "Message type is FREE_ID_SEARCH" << endl;
 #endif
 
             if(originMe) {
@@ -213,7 +213,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         case NODE_ANNOUNCEMENT :
 
 #ifdef VERBOSE
-            cout << "Message type is NODE_ANNOUNCEMENT" << endl;
+            repo->getOutput() << "Message type is NODE_ANNOUNCEMENT" << endl;
 #endif
 
             {
@@ -237,7 +237,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         case INSTANCE_ANNOUNCEMENT :
 
 #ifdef VERBOSE
-            cout << "Message type is INSTANCE_ANNOUNCEMENT" << endl;
+            repo->getOutput() << "Message type is INSTANCE_ANNOUNCEMENT" << endl;
 #endif
 
             repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
@@ -262,13 +262,13 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         right.Boomerang(myData);
 
 #ifdef VERBOSE
-        cout << "Boomerang was sent to right neighbour" << endl;
+        repo->getOutput() << "Boomerang was sent to right neighbour" << endl;
 #endif
 
     }
 #ifdef VERBOSE
     else {
-        cout << "Boomerang ends here. No sending." << endl;
+        repo->getOutput() << "Boomerang ends here. No sending." << endl;
     }
 #endif
 
@@ -276,7 +276,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
 
 void LeftNeighbourImpl::AbortingBoomerang() {
-    cout << "Recieved message AbortingBoomerang from left neighbour" << endl;
+    repo->getOutput() << "Recieved message AbortingBoomerang from left neighbour" << endl;
     networkModule->getMyRightInterface().AbortingBoomerang();
 }
 
@@ -284,17 +284,17 @@ void LeftNeighbourImpl::AbortingBoomerang() {
 //  RightNeighbour
 
 void RightNeighbourImpl::BuildNetAndRequestData(const nodeID& newNeighbourID) {
-    cout << "Recieved message BuildNetAndRequestData from right neighbour" << endl;
+    repo->getOutput() << "Recieved message BuildNetAndRequestData from right neighbour" << endl;
     networkModule->changeRightNeighbour(newNeighbourID);
 
 #ifdef VERBOSE
-        cout << "Sending all instance data to right neighbour" << endl;
+        repo->getOutput() << "Sending all instance data to right neighbour" << endl;
 #endif
 
     repo->sendAllData();
 
 #ifdef VERBOSE
-        cout << "Sending data was completed" << endl;
+        repo->getOutput() << "Sending data was completed" << endl;
 #endif
 }
 
@@ -302,7 +302,7 @@ void RightNeighbourImpl::BuildNetAndRequestData(const nodeID& newNeighbourID) {
 void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, SequenceTmpl<nodeID, MICO_TID_DEF> liveNodes,
                                   SequenceTmpl<Long, MICO_TID_DEF> compIDs) {
 
-    cout << "Recieved message NodeDied from right neighbour" << endl;
+    repo->getOutput() << "Recieved message NodeDied from right neighbour" << endl;
     SequenceTmpl<nodeID, MICO_TID_DEF> newNodeSequence;
     SequenceTmpl<Long, MICO_TID_DEF> newCompSequence;
     newNodeSequence.length(liveNodes.length() + 1);
@@ -321,7 +321,7 @@ void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, SequenceTmpl<no
 
 
 void RightNeighbourImpl::RebuildNetwork(const nodeID& newNeighbourID) {
-    cout << "Recieved message RebuildNetwork from right neighbour" << endl;
+    repo->getOutput() << "Recieved message RebuildNetwork from right neighbour" << endl;
     networkModule->changeRightNeighbour(newNeighbourID);
     networkModule->repairNetwork();
 }

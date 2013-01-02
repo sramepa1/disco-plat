@@ -1,4 +1,5 @@
 #include "Synchronization.h"
+#include "Repository.h"
 
 #include "../build/Interface.h"
 
@@ -41,7 +42,7 @@ void Synchronization::synchronize() {
         #ifdef VERBOSE
         if(comp->hasNewSolution()) {
             comp->getSolution();
-            cout << "I may be alone, but I have a new optimum: " << comp->getOptimum() << endl;
+            repo->getOutput() << "I may be alone, but I have a new optimum: " << comp->getOptimum() << endl;
         }
         #endif
         return;
@@ -82,7 +83,7 @@ void Synchronization::synchronize() {
     if(accept) {
 
 #ifdef VERBOSE
-    cout << "Accepting solution from circle with optimum " << circleSolutionOpt << endl;
+    repo->getOutput() << "Accepting solution from circle with optimum " << circleSolutionOpt << endl;
 #endif
 
         comp->setSolution(circleSolutionOpt, circleConfiguration, circleSolutionAbsolute);
@@ -94,7 +95,7 @@ void Synchronization::synchronize() {
     if(send) {
 
 #ifdef VERBOSE
-        cout << "Broadcasting my solution with optimum " << mySolutionOpt << endl;
+        repo->getOutput() << "Broadcasting my solution with optimum " << mySolutionOpt << endl;
 #endif
 
         // let the ring know
@@ -145,7 +146,7 @@ void Synchronization::synchronize() {
             rightNb->Boomerang(message);
 
 #ifdef VERBOSE
-            cout << "Assigning WORK to " << message.asignee.identifier << endl;
+            repo->getOutput() << "Assigning WORK to " << message.asignee.identifier << endl;
 #endif
 
         } else {
@@ -160,7 +161,7 @@ void Synchronization::synchronize() {
             rightNb->Boomerang(message);
 
 #ifdef VERBOSE
-            cout << "Declining WORK REQUEST to " << message.sourceNode.identifier << endl;
+            repo->getOutput() << "Declining WORK REQUEST to " << message.sourceNode.identifier << endl;
 #endif
         }
 
@@ -180,7 +181,7 @@ bool Synchronization::isWorkAvailable() {
     }
 
 #ifdef VERBOSE
-    cout << "I have nothing to do ... Requesting some work" << endl;
+    repo->getOutput() << "I have nothing to do ... Requesting some work" << endl;
 #endif
 
     pthread_mutex_lock(&stateMutex);
@@ -209,7 +210,7 @@ bool Synchronization::isWorkAvailable() {
         pthread_mutex_unlock(&stateMutex);
 
 #ifdef VERBOSE
-        cout << "Working thread awaken" << endl;
+        repo->getOutput() << "Working thread awaken" << endl;
 #endif
         return true;
     }
@@ -222,7 +223,7 @@ bool Synchronization::isWorkAvailable() {
         sendTerminationToken();
     } else {
 #ifdef VERBOSE
-        cout << "I am termination leader - initiating termination protocol" << endl;
+        repo->getOutput() << "I am termination leader - initiating termination protocol" << endl;
 #endif
 
         terminationLeader = true;
@@ -237,14 +238,14 @@ bool Synchronization::isWorkAvailable() {
             rightNb->Boomerang(message);
 
 #ifdef VERBOSE
-            cout << "Termination token send" << endl;
+            repo->getOutput() << "Termination token send" << endl;
 #endif
 
             pthread_cond_wait(&idleCondition, &syncMutex);
 
             if(commandTerminate) {
 #ifdef VERBOSE
-                cout << "Executing my termination" << endl;
+                repo->getOutput() << "Executing my termination" << endl;
 #endif
                 pthread_mutex_unlock(&syncMutex);
                 return false;
@@ -252,7 +253,7 @@ bool Synchronization::isWorkAvailable() {
 
             if(recievedColor == WHITE) {
 #ifdef VERBOSE
-                cout << "Sending command to terminate the computation" << endl;
+                repo->getOutput() << "Sending command to terminate the computation" << endl;
 #endif
 
                 blob message;
@@ -263,7 +264,7 @@ bool Synchronization::isWorkAvailable() {
                 rightNb->Boomerang(message);
 
 #ifdef VERBOSE
-                cout << "Executing my termination" << endl;
+                repo->getOutput() << "Executing my termination" << endl;
 #endif
                 pthread_mutex_unlock(&syncMutex);
                 return false;
@@ -272,7 +273,7 @@ bool Synchronization::isWorkAvailable() {
     }
 
 #ifdef VERBOSE
-    cout << "Waiting for termnation command" << endl;
+    repo->getOutput() << "Waiting for termnation command" << endl;
 #endif
 
     while(!commandTerminate) {
@@ -280,7 +281,7 @@ bool Synchronization::isWorkAvailable() {
     }
 
 #ifdef VERBOSE
-    cout << "Executing my termination" << endl;
+    repo->getOutput() << "Executing my termination" << endl;
 #endif
     pthread_mutex_unlock(&syncMutex);
     return false;
@@ -297,7 +298,7 @@ void Synchronization::informAssignment(blob data) {
     comp->setWork(unit);
 
 #ifdef VERBOSE
-    cout << "Accepting assigned WORK from " << data.sourceNode.identifier << endl;
+    repo->getOutput() << "Accepting assigned WORK from " << data.sourceNode.identifier << endl;
 #endif
 
     workReciewed = true;
@@ -319,7 +320,7 @@ void Synchronization::informNoAssignment() {
     pthread_mutex_lock(&syncMutex);
 
 #ifdef VERBOSE
-    cout << "WORK request declined" << endl;
+    repo->getOutput() << "WORK request declined" << endl;
 #endif
 
     workReciewed = false;
@@ -361,7 +362,7 @@ void Synchronization::informMyToken(blob data) {
     recievedColor = (color) data.slotA;
 
 #ifdef VERBOSE
-    cout << "Token retuned with color " << (recievedColor == WHITE ? "WHITE" : "BLACK")  << endl;
+    repo->getOutput() << "Token retuned with color " << (recievedColor == WHITE ? "WHITE" : "BLACK")  << endl;
 #endif
 
     pthread_cond_signal(&idleCondition);
@@ -387,13 +388,13 @@ void Synchronization::informForeignToken(blob data) {
 
             if(me.compare(competitor) > 0) {
 #ifdef VERBOSE
-    cout << "More leaders detected - loosing my leadership" << endl;
+    repo->getOutput() << "More leaders detected - loosing my leadership" << endl;
 #endif
                 terminationLeader = false;
                 sendTerminationToken();
             } else {
 #ifdef VERBOSE
-    cout << "More leaders detected - keeping my leadership" << endl;
+    repo->getOutput() << "More leaders detected - keeping my leadership" << endl;
 #endif
             }
 
@@ -403,7 +404,7 @@ void Synchronization::informForeignToken(blob data) {
         }
     } else {
 #ifdef VERBOSE
-    cout << "Saving token till my work is finished" << endl;
+    repo->getOutput() << "Saving token till my work is finished" << endl;
 #endif
     }
 
@@ -451,7 +452,7 @@ void Synchronization::sendTerminationToken() {
     }
 
 #ifdef VERBOSE
-    cout << "Sending token with color " << ( (color) message.slotA == WHITE ? "WHITE" : "BLACK")  << endl;
+    repo->getOutput() << "Sending token with color " << ( (color) message.slotA == WHITE ? "WHITE" : "BLACK")  << endl;
 #endif
 
     rightNb->Boomerang(message);

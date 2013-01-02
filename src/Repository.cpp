@@ -6,6 +6,7 @@
 #include "Synchronization.h"
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
@@ -49,6 +50,12 @@ Repository::~Repository() {
     if(isOutStreamOwner) {
         delete outStream;
     }
+}
+
+ostream& Repository::getOutput() {
+    // TODO: Replace 0x42 by logical clock value
+    *outStream << '[' << hex << setw(16) << setfill('0') << (uint64_t)0x42 << "] " << dec;
+    return *outStream;
 }
 
 unsigned int Repository::getFreeID() {
@@ -112,13 +119,13 @@ void Repository::newData(unsigned int id, string algoName, string instanceText, 
     pthread_mutex_unlock(&dataMutex);
 
 #ifdef VERBOSE
-    cout << "Adding new instance data: " << instanceText;
+    getOutput() << "Adding new instance data: " << instanceText;
 #endif
 
     if(broadcast && !networkModule->isSingle()) {
 
 #ifdef VERBOSE
-    cout << "Broadcasting new instance";
+    getOutput() << "Broadcasting new instance";
 #endif
 
         // let the ring know
@@ -209,7 +216,7 @@ void Repository::init() {
 
     if(networkModule->isSingle()) {
 #ifdef VERBOSE
-    cout << "I am a single node - no data gathering needed" << endl;
+    getOutput() << "I am a single node - no data gathering needed" << endl;
 #endif
         maxID = 1;
 
@@ -221,7 +228,7 @@ void Repository::init() {
     }
 
 #ifdef VERBOSE
-    cout << "Starting data gathering - idling main thread" << endl;
+    getOutput() << "Starting data gathering - idling main thread" << endl;
 #endif
 
     pthread_mutex_lock(&dataMutex);
@@ -238,7 +245,7 @@ void Repository::awakeInit() {
     pthread_mutex_lock(&dataMutex);
 
 #ifdef VERBOSE
-    cout << "Initial data gathering complete - waking main thread" << endl;
+    getOutput() << "Initial data gathering complete - waking main thread" << endl;
 #endif
 
     if(isInitSleeping) {
@@ -330,7 +337,7 @@ bool Repository::isAlive(const string& identifier) {
 void Repository::addLiveNode(const string& identifier) {
     pthread_mutex_lock(&livenessMutex);
 #ifdef VERBOSE
-    cout << "Adding new living node: " << identifier << endl;
+    getOutput() << "Adding new living node: " << identifier << endl;
 #endif
     liveNodes.insert(identifier);
     pthread_mutex_unlock(&livenessMutex);

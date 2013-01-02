@@ -51,7 +51,7 @@ void Computation::start(bool localStart) {
     repo->getOutput() << (localStart ? "Initiating" : "Joining") << " computation " << sync->getComputationID() << endl;
 
     if(!localStart && !sync->isWorkAvailable()) {
-        cout << "Late to the party... Joined a computation where noone wants to share work. Quitting." << endl;
+        repo->getOutput() << "Late to the party... Joined a computation where noone wants to share work. Quitting." << endl;
         return;
     }
 
@@ -62,7 +62,7 @@ void Computation::start(bool localStart) {
         } while(sync->isWorkAvailable());
 
     } catch(AbsoluteSolutionException) {
-        cout << "Absolute solution detected." << endl;
+        repo->getOutput() << "Absolute solution detected." << endl;
     }
 
     repo->getOutput() << "Computation " << sync->getComputationID() << " finished with the following result:" << endl;
@@ -75,8 +75,8 @@ void Computation::DFS() {
 
     while(true) {
 
-//      cout << "Trying configuration => ";
-//      algo->printConfig(configStack + stackTop*instanceSize, cout);
+//      repo->getOutput() << "Trying configuration => ";
+//      algo->printConfig(configStack + stackTop*instanceSize, repo->getOutput());
 
         if(algo->evaluate()) {
             algo->expand();
@@ -102,14 +102,14 @@ void Computation::synchronize() {
     timestamp = now;
     if(delta < 50) {
         #ifdef VERBOSE
-        cout << "Adaptive loop delta was too low: " << delta << ", increasing loop counter" << endl;
+        repo->getOutput() << "Adaptive loop delta was too low: " << delta << ", increasing loop counter" << endl;
         #endif
         loopsToSync *= 3;
         loopsToSync /= 2;
     }
     if(delta > 300) {
         #ifdef VERBOSE
-        cout << "Adaptive loop delta was too high: " << delta << ", decreasing loop counter" << endl;
+        repo->getOutput() << "Adaptive loop delta was too high: " << delta << ", decreasing loop counter" << endl;
         #endif
         loopsToSync /= 3;
         loopsToSync *= 2;
@@ -165,7 +165,7 @@ bool Computation::splitWork(WorkUnit& work) {
             intervalStack[stackLevel].second = cut;
 
             #ifdef VERBOSE
-            cout << "Keeping work slice [" << left << ", " << cut << ") at level " << stackLevel << endl;
+            repo->getOutput() << "Keeping work slice [" << left << ", " << cut << ") at level " << stackLevel << endl;
             #endif
 
             work.depth = stackLevel + 1;
@@ -196,7 +196,7 @@ void Computation::setWork(WorkUnit& work) {
     }
 
     #ifdef VERBOSE
-    cout << "Received work slice [" << intervalStack[stackTop].first << ", " << intervalStack[stackTop].second
+    repo->getOutput() << "Received work slice [" << intervalStack[stackTop].first << ", " << intervalStack[stackTop].second
          << ") at level " << stackTop << endl;
     #endif
 
