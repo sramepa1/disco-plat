@@ -15,6 +15,8 @@
 #define BLACK false
 #define WHITE true
 
+#define PING_COUNTER_MAX 15
+
 enum SyncState { WORKING, SYNCHRONIZING, IDLING, TERMINATING };
 
 
@@ -42,6 +44,8 @@ class Synchronization
     bool isWorkingState;
     bool workReciewed;
     bool splitSuccesful;
+
+    int pingCounter;
 
     std::list<disco_plat::nodeID> workRequests;
     std::map<std::string, std::pair<uint64_t, WorkUnit> > workAssignments;
@@ -105,6 +109,12 @@ public:
     void informForeignToken(disco_plat::blob data);
 
     void informTerminate();
+
+    void pingReset() {
+        pthread_mutex_lock(&syncMutex);
+        pingCounter = 0;
+        pthread_mutex_unlock(&syncMutex);
+    }
 
     bool isWorking();
     bool hasWorkToSplit();

@@ -30,7 +30,6 @@ void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out ol
 
 
 void LeftNeighbourImpl::Boomerang(const blob& data) {
-    repo->getOutput() << "Recieved message Boomerang from left neighbour" << endl;
 
     // time update
     repo->timeColision(data.timestamp);
@@ -58,7 +57,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         case FREE_ID_SEARCH :
 
 #ifdef VERBOSE
-            repo->getOutput() << "Message type is FREE_ID_SEARCH" << endl;
+            repo->getOutput() << "Recieved message Boomerang of type  FREE_ID_SEARCH" << endl;
 #endif
 
             if(originMe) {
@@ -78,7 +77,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         case NODE_ANNOUNCEMENT :
 
 #ifdef VERBOSE
-            repo->getOutput() << "Message type is NODE_ANNOUNCEMENT" << endl;
+            repo->getOutput() << "Recieved message Boomerang of type  NODE_ANNOUNCEMENT" << endl;
 #endif
 
             {
@@ -102,7 +101,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
         case INSTANCE_ANNOUNCEMENT :
 
 #ifdef VERBOSE
-            repo->getOutput() << "Message type is INSTANCE_ANNOUNCEMENT" << endl;
+            repo->getOutput() << "Recieved message Boomerang of type  INSTANCE_ANNOUNCEMENT" << endl;
 #endif
 
             repo->newData(data.computationID, string(data.dataStringA), string(data.dataStringB), false);
@@ -119,7 +118,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
         case NETWORK_REBUILT: {
 #ifdef VERBOSE
-            repo->getOutput() << "Message type is NETWORK_REBUILT" << endl;
+            repo->getOutput() << "Recieved message Boomerang of type  NETWORK_REBUILT" << endl;
 #endif
 
             set<string> liveNodesSet;
@@ -159,19 +158,22 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
     if(currentSyncModule != NULL) {
 
+        currentSyncModule->pingReset();
+
         switch(data.messageType) {
             case PING :
 
 #ifdef VERBOSE
-                repo->getOutput() << "Message type is PING" << endl;
+                repo->getOutput() << "Recieved message Boomerang of type  PING" << endl;
 #endif
+                sendFurther = false;
 
                 break;
 
             case WORK_REQUEST :
 
 #ifdef VERBOSE
-                repo->getOutput() << "Message type is WORK_REQUEST" << endl;
+                repo->getOutput() << "Recieved message Boomerang of type  WORK_REQUEST" << endl;
 #endif
 
                 // TODO recovery and cache
@@ -199,7 +201,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case WORK_ASSIGNMET :
 
 #ifdef VERBOSE
-                repo->getOutput() << "Message type is WORK_ASSIGNMET" << endl;
+                repo->getOutput() << "Recieved message Boomerang of type  WORK_ASSIGNMET" << endl;
 #endif
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
@@ -233,7 +235,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case RESULT :
 
 #ifdef VERBOSE
-                repo->getOutput() << "Message type is RESULT" << endl;
+                repo->getOutput() << "Recieved message Boomerang of type  RESULT" << endl;
 #endif
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
@@ -252,7 +254,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case TERMINATION_TOKEN :
 
 #ifdef VERBOSE
-                repo->getOutput() << "Message type is TERMINATION_TOKEN" << endl;
+                repo->getOutput() << "Recieved message Boomerang of type  TERMINATION_TOKEN" << endl;
 #endif
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
@@ -270,7 +272,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             case TERMINATE :
 
 #ifdef VERBOSE
-                repo->getOutput() << "Message type is TERMINATE" << endl;
+                repo->getOutput() << "Recieved message Boomerang of type  TERMINATE" << endl;
 #endif
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
@@ -294,17 +296,8 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
     if(sendFurther) {
         RightNeighbourIface& right = networkModule->getMyRightInterface();
         right.Boomerang(myData);
-
-#ifdef VERBOSE
-        repo->getOutput() << "Boomerang was sent to right neighbour" << endl;
-#endif
-
     }
-#ifdef VERBOSE
-    else {
-        repo->getOutput() << "Boomerang ends here. No sending." << endl;
-    }
-#endif
+
 }
 
 

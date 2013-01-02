@@ -25,6 +25,8 @@ Synchronization::Synchronization(Computation* comp, unsigned int id) : comp(comp
     commandTerminate = false;
     terminationToken = false;
 
+    pingCounter = 0;
+
     myColor = WHITE;
 }
 
@@ -49,6 +51,8 @@ void Synchronization::synchronize() {
     }
 
     pthread_mutex_lock(&syncMutex);
+
+    bool ping = true;
 
     // solution
     bool send;
@@ -97,6 +101,7 @@ void Synchronization::synchronize() {
 #ifdef VERBOSE
         repo->getOutput() << "Broadcasting my solution with optimum " << mySolutionOpt << endl;
 #endif
+        ping = false;
 
         // let the ring know
         blob message;
@@ -119,6 +124,8 @@ void Synchronization::synchronize() {
 
     // work requests
     while(!workRequests.empty()) {
+        ping = false;
+
         if(splitSuccesful && comp->splitWork(unit)) {
             myColor = BLACK;
 
@@ -167,6 +174,30 @@ void Synchronization::synchronize() {
 #endif
         }
 
+    }
+
+    // pinging
+    if(ping) {
+        if(pingCounter > PING_COUNTER_MAX) {
+
+#ifdef VERBOSE
+            repo->getOutput() << "PINGING cause no message send for a long time" << endl;
+#endif
+
+            pingCounter = 0;
+
+            blob message;
+            message.sourceNode = networkModule->getMyID();
+            message.computationID = computationID;
+            message.messageType = PING;
+
+            rightNb->Boomerang(message);
+
+        } else {
+            pingCounter++;
+        }
+    } else {
+        pingCounter = 0;
     }
 
     // flags reset
@@ -310,7 +341,15 @@ void Synchronization::informAssignment(blob data) {
 }
 
 void Synchronization::updateWorkCache(string& identifier, uint64_t time, WorkUnit& work, string& originalOwner) {
+
+#ifdef VERBOSE
+    repo->getOutput() << "Updating work cache fo " << identifier << endl;
+#endif
+
     if(originalOwner.empty()) {
+#ifdef VERBOSE
+        repo->getOutput() << "Dezombifying work cache from " << originalOwner << endl;
+#endif
         workAssignments.erase(originalOwner);  // De-zombify
     }
     workAssignments[identifier] = make_pair(time, work);
