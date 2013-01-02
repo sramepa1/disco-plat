@@ -135,20 +135,20 @@ bool Computation::isBetter(opt_t thisOptimum, opt_t thanThisOptimum) {
 }
 
 
-bool Computation::splitWork(WorkUnit& work) {
+bool Computation::splitWork(WorkUnit& workToSend, WorkUnit& workToAnnounceKept) {
 
     if(!workSplitPossible) {
         return false;
     }
 
-    work.instanceSize = instanceSize;
-    work.intervalStackVector.clear();
+    workToSend.instanceSize = instanceSize;
+    workToSend.intervalStackVector.clear();
 
     // avoid splitting on very deep levels (above 60% of theoretical maximum)
     for(int stackLevel = 0; stackLevel <= stackTop && stackLevel <= (maxStackSize * 3) / 5; stackLevel++) {
 
-        work.configStackVector.resize(instanceSize * (stackLevel + 1));
-        memcpy(work.configStackVector.data() + stackLevel * instanceSize,
+        workToSend.configStackVector.resize(instanceSize * (stackLevel + 1));
+        memcpy(workToSend.configStackVector.data() + stackLevel * instanceSize,
                configStack + stackLevel * instanceSize,
                instanceSize);
 
@@ -160,20 +160,25 @@ bool Computation::splitWork(WorkUnit& work) {
             int amountToGive = (int)((double)branchCount * 0.9); // Bulgarian constant rulez
             int cut = right - amountToGive;
 
-            work.intervalStackVector.push_back(cut);
-            work.intervalStackVector.push_back(right);
+            workToSend.depth = stackLevel + 1;
+            workToAnnounceKept = workToSend;
+
+            workToSend.intervalStackVector.push_back(cut);
+            workToSend.intervalStackVector.push_back(right);
             intervalStack[stackLevel].second = cut;
+
+            workToAnnounceKept.intervalStackVector.push_back(left);
+            workToAnnounceKept.intervalStackVector.push_back(cut);
 
             #ifdef VERBOSE
             repo->getOutput() << "Keeping work slice [" << left << ", " << cut << ") at level " << stackLevel << endl;
             #endif
 
-            work.depth = stackLevel + 1;
             return true;
         }
 
-        work.intervalStackVector.push_back(left);
-        work.intervalStackVector.push_back(right);
+        workToSend.intervalStackVector.push_back(left);
+        workToSend.intervalStackVector.push_back(right);
     }
 
     return (workSplitPossible = false); // TODO: Discuss optimality of outcome caching and point-of-no-return behavior

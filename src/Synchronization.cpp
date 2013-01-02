@@ -131,7 +131,7 @@ void Synchronization::synchronize() {
     while(!workRequests.empty()) {
         ping = false;
 
-        if(splitSuccesful && comp->splitWork(unit)) {
+        if(splitSuccesful && comp->splitWork(tmpUnit, unitToAnnounceKept)) {
             myColor = BLACK;
 
             blob message;
@@ -142,22 +142,43 @@ void Synchronization::synchronize() {
             message.asignee = workRequests.front();
             workRequests.pop_front();
 
-            message.slotA = unit.depth;
-            message.slotB = unit.instanceSize;
+            message.slotA = tmpUnit.depth;
+            message.slotB = tmpUnit.instanceSize;
 
-            message.charDataSequence.length(unit.configStackVector.size());
-            for(unsigned int i = 0; i < unit.configStackVector.size(); ++i) {
-                message.charDataSequence[i] = unit.configStackVector[i];
+            message.charDataSequence.length(tmpUnit.configStackVector.size());
+            for(unsigned int i = 0; i < tmpUnit.configStackVector.size(); ++i) {
+                message.charDataSequence[i] = tmpUnit.configStackVector[i];
             }
 
-            message.longDataSequence.length(unit.intervalStackVector.size());
-            for(unsigned int i = 0; i < unit.intervalStackVector.size(); ++i) {
-                message.longDataSequence[i] = unit.intervalStackVector[i];
+            message.longDataSequence.length(tmpUnit.intervalStackVector.size());
+            for(unsigned int i = 0; i < tmpUnit.intervalStackVector.size(); ++i) {
+                message.longDataSequence[i] = tmpUnit.intervalStackVector[i];
             }
 
             message.dataStringA = "";
 
-            workAssignments[string(message.asignee.identifier)] = make_pair(repo->getTime(), unit);
+            workAssignments[string(message.asignee.identifier)] = make_pair(repo->getTime(), tmpUnit);
+
+            rightNb->Boomerang(message);
+
+
+            // Announce the work I'm keeping without it actually being assigned to anyone
+
+            message.sourceNode = networkModule->getLeftID();
+            message.asignee = networkModule->getMyID();
+
+            message.slotA = unitToAnnounceKept.depth;
+            message.slotB = unitToAnnounceKept.instanceSize;
+
+            message.charDataSequence.length(unitToAnnounceKept.configStackVector.size());
+            for(unsigned int i = 0; i < unitToAnnounceKept.configStackVector.size(); ++i) {
+                message.charDataSequence[i] = unitToAnnounceKept.configStackVector[i];
+            }
+
+            message.longDataSequence.length(unitToAnnounceKept.intervalStackVector.size());
+            for(unsigned int i = 0; i < unitToAnnounceKept.intervalStackVector.size(); ++i) {
+                message.longDataSequence[i] = unitToAnnounceKept.intervalStackVector[i];
+            }
 
             rightNb->Boomerang(message);
 
@@ -424,12 +445,12 @@ bool Synchronization::isWorkAvailable() {
 void Synchronization::informAssignment(blob data) {
     pthread_mutex_lock(&syncMutex);
 
-    unit.depth = data.slotA;
-    unit.instanceSize = data.slotB;
-    unit.configStackVector =  vector<char>(data.charDataSequence.get_buffer(), data.charDataSequence.get_buffer() + data.charDataSequence.length());
-    unit.intervalStackVector = vector<int>(data.longDataSequence.get_buffer(), data.longDataSequence.get_buffer() + data.longDataSequence.length());
+    tmpUnit.depth = data.slotA;
+    tmpUnit.instanceSize = data.slotB;
+    tmpUnit.configStackVector =  vector<char>(data.charDataSequence.get_buffer(), data.charDataSequence.get_buffer() + data.charDataSequence.length());
+    tmpUnit.intervalStackVector = vector<int>(data.longDataSequence.get_buffer(), data.longDataSequence.get_buffer() + data.longDataSequence.length());
 
-    comp->setWork(unit);
+    comp->setWork(tmpUnit);
 
 #ifdef VERBOSE
     repo->getOutput() << "Accepting assigned WORK from " << data.sourceNode.identifier << endl;
@@ -446,12 +467,12 @@ void Synchronization::updateWorkCache(blob& assignmentData) {
     pthread_mutex_lock(&workCacheMutex);
 
     string zombieIdentifier(assignmentData.dataStringA);
-
-#ifdef VERBOSE
-    repo->getOutput() << "Updating work cache for " << zombieIdentifier << endl;
-#endif
-
     if(zombieIdentifier.empty()) {
+        string assigneeIdentifier(assignmentData.asignee.identifier);
+
+        #ifdef VERBOSE
+            repo->getOutput() << "Updating work cache for " << assigneeIdentifier << endl;
+        #endif
         WorkUnit unit;
         unit.depth = assignmentData.slotA;
         unit.instanceSize = assignmentData.slotB;
@@ -460,7 +481,7 @@ void Synchronization::updateWorkCache(blob& assignmentData) {
         unit.intervalStackVector = vector<int>(assignmentData.longDataSequence.get_buffer(),
                             assignmentData.longDataSequence.get_buffer() + assignmentData.longDataSequence.length());
 
-        workAssignments[zombieIdentifier] = make_pair(repo->getTime(), unit);
+        workAssignments[assigneeIdentifier] = make_pair(repo->getTime(), unit);
 
     } else {
 
@@ -522,6 +543,9 @@ void Synchronization::zombify(const set<string>& deadIdentifiers) {
 
 void Synchronization::killZombie(const string& zombieIdentifier) {
     pthread_mutex_lock(&workCacheMutex);
+    #ifdef VERBOSE
+    repo->getOutput() << "Killing zombie " << zombieIdentifier << endl;
+    #endif
     zombieWork.erase(zombieIdentifier);
     pthread_mutex_unlock(&workCacheMutex);
 }

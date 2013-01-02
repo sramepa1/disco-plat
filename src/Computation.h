@@ -74,7 +74,7 @@ public:
     /**
      * Attempts to split avaliable work in two. May return false if no work is available.
      */
-    bool splitWork(WorkUnit& work);
+    bool splitWork(WorkUnit& workToSend, WorkUnit& workToAnnounceKept);
 
     /**
      * Sets a new stack to work with.

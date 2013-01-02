@@ -40,7 +40,8 @@ class Synchronization
     bool mySolutionAbsolute;
     bool haveMySolution;
 
-    struct WorkUnit unit;
+    struct WorkUnit tmpUnit;
+    struct WorkUnit unitToAnnounceKept;
 
     bool isWorkingState;
     bool workReciewed;
