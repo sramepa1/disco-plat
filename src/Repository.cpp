@@ -11,6 +11,10 @@
 #include <sstream>
 #include <cstdlib>
 #include <ctime>
+extern "C" {
+#include <unistd.h>
+}
+
 
 using namespace std;
 using namespace disco_plat;
@@ -41,7 +45,7 @@ Repository::Repository(string outputFileName) : liveNodesConsistent(false), lamp
         }
     }
 
-    srand(time(NULL));
+    srand(time(NULL) ^ getpid());
 }
 
 Repository::~Repository() {
@@ -120,19 +124,19 @@ unsigned int Repository::getAnyValidID() {
 }
 
 void Repository::newData(unsigned int id, string algoName, string instanceText, bool broadcast) {
-    pthread_mutex_lock(&dataMutex);
-
-    if(!data.insert(make_pair(id, make_pair(algoName, instanceText))).second)
-    {
-        pthread_mutex_unlock(&dataMutex);
-        throw "Attempted to insert new data with an ID that already exists in this repository";
-    }
-
-    pthread_mutex_unlock(&dataMutex);
 
 #ifdef VERBOSE
     getOutput() << "Adding new instance data: " << instanceText;
 #endif
+
+    pthread_mutex_lock(&dataMutex);
+    if(!data.insert(make_pair(id, make_pair(algoName, instanceText))).second) {
+        #ifdef VERBOSE
+        getOutput() << "Warning: instance data with ID " << id
+                    << " overwritten! Let's hope it was just a net-crash repeat...";
+        #endif
+    }
+    pthread_mutex_unlock(&dataMutex);
 
     if(broadcast && !networkModule->isSingle()) {
 

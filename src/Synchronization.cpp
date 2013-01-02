@@ -1,6 +1,9 @@
 #include "Synchronization.h"
 #include "Repository.h"
 
+#include <cstdlib>
+#include <sstream>
+
 #include "../build/Interface.h"
 
 using namespace std;
@@ -13,6 +16,7 @@ Synchronization::Synchronization(Computation* comp, unsigned int id) : comp(comp
 
     pthread_mutex_init(&stateMutex, NULL);
     pthread_mutex_init(&syncMutex, NULL);
+    pthread_mutex_init(&workCacheMutex, NULL);
     pthread_cond_init(&idleCondition, NULL);
 
     haveNewCirlceSolution = false;
@@ -34,6 +38,7 @@ Synchronization::~Synchronization()
 {
     pthread_mutex_destroy(&stateMutex);
     pthread_mutex_destroy(&syncMutex);
+    pthread_mutex_destroy(&workCacheMutex);
     pthread_cond_destroy(&idleCondition);
 }
 
@@ -209,13 +214,35 @@ void Synchronization::synchronize() {
 
 bool Synchronization::isWorkAvailable() {
 
-    if(networkModule->isSingle()) {
-        return false;
-    }
-
 #ifdef VERBOSE
     repo->getOutput() << "I have nothing to do ... Requesting some work" << endl;
 #endif
+
+    if(networkModule->isSingle()) {
+
+        pthread_mutex_lock(&workCacheMutex);
+        map<string, pair<uint64_t, WorkUnit> >::iterator zombit = zombieWork.begin();
+        if(zombit != zombieWork.end()) {
+            #ifdef VERBOSE
+            repo->getOutput() << "I'm alone, but there is zombie work that once belonged to " << zombit->first << endl;
+            #endif
+
+            comp->setWork(zombit->second.second);
+
+            zombieWork.erase(zombit);
+            pthread_mutex_unlock(&workCacheMutex);
+            return true;
+        }
+
+        #ifdef VERBOSE
+        repo->getOutput() << "I'm alone and there is no zombie work either. Nothing more to work on." << endl;
+        #endif
+
+        pthread_mutex_lock(&workCacheMutex);
+        return false;
+    }
+
+
 
     pthread_mutex_lock(&stateMutex);
     isWorkingState = false;
@@ -225,12 +252,69 @@ bool Synchronization::isWorkAvailable() {
 
     pthread_mutex_lock(&syncMutex);
 
-    blob message;
-    message.sourceNode = networkModule->getMyID();
-    message.computationID = computationID;
-    message.messageType = WORK_REQUEST;
+    // try zombie work first
 
-    rightNb->Boomerang(message);
+    pthread_mutex_lock(&workCacheMutex);
+    map<string, pair<uint64_t, WorkUnit> >::iterator zombit = zombieWork.begin();
+    if(zombit != zombieWork.end()) {
+        int rnd = rand() % zombieWork.size();
+        for(int i = 0; i < rnd; i++) {
+            ++zombit;
+        }
+
+        // Assign it to myself
+
+        blob message;
+        message.sourceNode = networkModule->getMyID();
+        message.computationID = computationID;
+        message.messageType = WORK_ASSIGNMET;
+
+        message.asignee = networkModule->getMyID();
+
+        WorkUnit& unit = zombit->second.second;
+
+        message.slotA = unit.depth;
+        message.slotB = unit.instanceSize;
+
+        message.charDataSequence.length(unit.configStackVector.size());
+        for(unsigned int i = 0; i < unit.configStackVector.size(); ++i) {
+            message.charDataSequence[i] = unit.configStackVector[i];
+        }
+
+        message.longDataSequence.length(unit.intervalStackVector.size());
+        for(unsigned int i = 0; i < unit.intervalStackVector.size(); ++i) {
+            message.longDataSequence[i] = unit.intervalStackVector[i];
+        }
+
+        message.dataStringA = zombit->first.c_str();
+
+        ostringstream strStamp;
+        strStamp << zombit->second.first;
+        message.dataStringB = strStamp.str().c_str();
+
+        rightNb->Boomerang(message);
+
+#ifdef VERBOSE
+        repo->getOutput() << "Assigning ZOMBIE WORK to myself, original owner was " << zombit->first << endl;
+#endif
+
+        // zombit will not be erased here - it will be done upon receive
+
+        pthread_mutex_unlock(&workCacheMutex);
+
+    } else {
+
+        pthread_mutex_unlock(&workCacheMutex);
+
+        // Regular request
+
+        blob message;
+        message.sourceNode = networkModule->getMyID();
+        message.computationID = computationID;
+        message.messageType = WORK_REQUEST;
+
+        rightNb->Boomerang(message);
+    }
 
     workReciewed = false;
     pthread_cond_wait(&idleCondition, &syncMutex);
@@ -355,19 +439,89 @@ void Synchronization::informAssignment(blob data) {
     pthread_mutex_unlock(&syncMutex);
 }
 
-void Synchronization::updateWorkCache(string& identifier, uint64_t time, WorkUnit& work, string& originalOwner) {
+
+void Synchronization::updateWorkCache(blob& assignmentData) {
+    pthread_mutex_lock(&workCacheMutex);
+
+    string zombieIdentifier(assignmentData.dataStringA);
 
 #ifdef VERBOSE
-    repo->getOutput() << "Updating work cache for " << identifier << endl;
+    repo->getOutput() << "Updating work cache for " << zombieIdentifier << endl;
 #endif
 
-    if(!originalOwner.empty()) {
-#ifdef VERBOSE
-        repo->getOutput() << "Dezombifying work cache from " << originalOwner << endl;
-#endif
-        workAssignments.erase(originalOwner);  // De-zombify
+    if(zombieIdentifier.empty()) {
+        WorkUnit unit;
+        unit.depth = assignmentData.slotA;
+        unit.instanceSize = assignmentData.slotB;
+        unit.configStackVector =  vector<char>(assignmentData.charDataSequence.get_buffer(),
+                            assignmentData.charDataSequence.get_buffer() + assignmentData.charDataSequence.length());
+        unit.intervalStackVector = vector<int>(assignmentData.longDataSequence.get_buffer(),
+                            assignmentData.longDataSequence.get_buffer() + assignmentData.longDataSequence.length());
+
+        workAssignments[zombieIdentifier] = make_pair(repo->getTime(), unit);
+
+    } else {
+
+        istringstream strStamp(string(assignmentData.dataStringB));
+        uint64_t originalTime;
+        strStamp >> originalTime;
+
+        map<string, pair<uint64_t, WorkUnit> >::iterator zombit = zombieWork.find(zombieIdentifier);
+        if(zombit != zombieWork.end()) {
+
+            if(originalTime <  zombit->second.first) {
+                #ifdef VERBOSE
+                repo->getOutput() << "I have newer zombie work for "<<zombieIdentifier<<", updating boomerang." << endl;
+                #endif
+
+                WorkUnit& unit = zombit->second.second;
+
+                assignmentData.slotA = unit.depth;
+                assignmentData.slotB = unit.instanceSize;
+
+                assignmentData.charDataSequence.length(unit.configStackVector.size());
+                for(unsigned int i = 0; i < unit.configStackVector.size(); ++i) {
+                    assignmentData.charDataSequence[i] = unit.configStackVector[i];
+                }
+
+                assignmentData.longDataSequence.length(unit.intervalStackVector.size());
+                for(unsigned int i = 0; i < unit.intervalStackVector.size(); ++i) {
+                    assignmentData.longDataSequence[i] = unit.intervalStackVector[i];
+                }
+            }
+
+            #ifdef VERBOSE
+            repo->getOutput() << "Dezombifying work cache for " << zombieIdentifier << endl;
+            #endif
+            zombieWork.erase(zombieIdentifier);  // De-zombify
+        }
     }
-    workAssignments[identifier] = make_pair(time, work);
+
+
+    pthread_mutex_unlock(&workCacheMutex);
+}
+
+
+void Synchronization::zombify(const set<string>& deadIdentifiers) {
+    pthread_mutex_lock(&workCacheMutex);
+    for(set<string>::iterator sit = deadIdentifiers.begin(); sit != deadIdentifiers.end(); ++sit) {
+        map<string, pair<uint64_t, WorkUnit> >::iterator mit = workAssignments.find(*sit);
+        if(mit != workAssignments.end()) {
+            #ifdef VERBOSE
+            repo->getOutput() << "Zombifying cached work that belonged to " << *sit << endl;
+            #endif
+            zombieWork[*sit] = mit->second; // Braaaains...
+            workAssignments.erase(mit);
+        }
+    }
+    pthread_mutex_unlock(&workCacheMutex);
+}
+
+
+void Synchronization::killZombie(const string& zombieIdentifier) {
+    pthread_mutex_lock(&workCacheMutex);
+    zombieWork.erase(zombieIdentifier);
+    pthread_mutex_unlock(&workCacheMutex);
 }
 
 

@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <vector>
 #include <map>
+#include <set>
 #include <string>
 
 
@@ -49,6 +50,7 @@ class Synchronization
 
     std::list<disco_plat::nodeID> workRequests;
     std::map<std::string, std::pair<uint64_t, WorkUnit> > workAssignments;
+    std::map<std::string, std::pair<uint64_t, WorkUnit> > zombieWork;
 
     typedef bool color;
     color myColor;
@@ -63,6 +65,7 @@ class Synchronization
 
     pthread_mutex_t stateMutex;
     pthread_mutex_t syncMutex;
+    pthread_mutex_t workCacheMutex;
     pthread_cond_t idleCondition;
 
 
@@ -100,8 +103,12 @@ public:
     void informNoAssignment();
     void informRequest(disco_plat::nodeID requesteeID);
 
-    // Pass empty string as originalOwner if this is not a de-zombification update
-    void updateWorkCache(std::string& identifier, uint64_t time, WorkUnit& work, std::string& originalOwner);
+    void updateWorkCache(disco_plat::blob& assignmentData);
+
+    void zombify(const std::set<std::string>& deadIdentifiers);
+
+    // Hard erase without moving. Only use when the cached work can't be lost.
+    void killZombie(const std::string& zombieIdentifier);
 
     void informResult(disco_plat::blob data);
 

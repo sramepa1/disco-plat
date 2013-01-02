@@ -194,27 +194,32 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 break;
 
             case WORK_ASSIGNMET :
-
 #ifdef VERBOSE
                 repo->getOutput() << "Recieved message Boomerang of type  WORK_ASSIGNMET" << endl;
 #endif
 
+
                 if(currentSyncModule->getComputationID() == data.computationID) {
-                    // is that work for me  
+                    // is that work for me
                     if(strcmp(data.asignee.identifier, networkModule->getMyID().identifier) == 0) {
+
+                        // check original owner
+                        string zombieIdentifer(data.dataStringA);
+                        if(!zombieIdentifer.empty()) {
+                            currentSyncModule->killZombie(zombieIdentifer);
+                            #ifdef VERBOSE
+                            repo->getOutput() << "Received self-assigned zombie work, originally owned by "
+                                              << zombieIdentifer << endl;
+                            #endif
+                        }
+
                         // take it
                         currentSyncModule->informAssignment(data);
-                    } else {
-                        // update cache
-                        string identifier(data.asignee.identifier);
-                        string previosAsignee(data.dataStringA);
-                        struct WorkUnit unit;
-                        unit.depth = data.slotA;
-                        unit.instanceSize = data.slotB;
-                        unit.configStackVector =  vector<char>(data.charDataSequence.get_buffer(), data.charDataSequence.get_buffer() + data.charDataSequence.length());
-                        unit.intervalStackVector = vector<int>(data.longDataSequence.get_buffer(), data.longDataSequence.get_buffer() + data.longDataSequence.length());
 
-                        currentSyncModule->updateWorkCache(identifier, data.timestamp, unit, previosAsignee);
+                    } else {
+
+                        // update cache and/or this message
+                        currentSyncModule->updateWorkCache(myData);
                     }
                 }
 
