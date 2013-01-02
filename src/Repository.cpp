@@ -9,6 +9,8 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
+
 #include <cstdlib>
 #include <ctime>
 extern "C" {
@@ -397,6 +399,19 @@ void Repository::addLiveNode(const string& identifier) {
 
 void Repository::setLiveNodes(const set<string>& liveNodes) {
     pthread_mutex_lock(&livenessMutex);
+
+    set<string> zombies;
+    set_difference(this->liveNodes.begin(), this->liveNodes.end(),
+                   liveNodes.begin(), liveNodes.end(),
+                    inserter(zombies, zombies.end()));
+
     this->liveNodes = liveNodes;
+
+    for(map<unsigned int, pair<AlgoInstance*, Computation*> >::iterator it = algoCompCache.begin();
+                                                                        it != algoCompCache.end(); ++it) {
+        Computation* comp = it->second.second;
+        comp->getSync()->zombify(zombies);
+    }
+
     pthread_mutex_unlock(&livenessMutex);
 }

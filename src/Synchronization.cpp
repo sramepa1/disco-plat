@@ -157,6 +157,8 @@ void Synchronization::synchronize() {
 
             message.dataStringA = "";
 
+            workAssignments[string(message.asignee.identifier)] = make_pair(repo->getTime(), unit);
+
             rightNb->Boomerang(message);
 
 #ifdef VERBOSE
@@ -238,7 +240,7 @@ bool Synchronization::isWorkAvailable() {
         repo->getOutput() << "I'm alone and there is no zombie work either. Nothing more to work on." << endl;
         #endif
 
-        pthread_mutex_lock(&workCacheMutex);
+        pthread_mutex_unlock(&workCacheMutex);
         return false;
     }
 
