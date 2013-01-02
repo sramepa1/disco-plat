@@ -123,7 +123,7 @@ void Synchronization::synchronize() {
             myColor = BLACK;
 
             blob message;
-            message.sourceNode = networkModule->getMyID();
+            message.sourceNode = workRequests.front();
             message.computationID = computationID;
             message.messageType = WORK_ASSIGNMET;
 
@@ -142,6 +142,8 @@ void Synchronization::synchronize() {
             for(unsigned int i = 0; i < unit.intervalStackVector.size(); ++i) {
                 message.longDataSequence[i] = unit.intervalStackVector[i];
             }
+
+            message.dataStringA = "";
 
             rightNb->Boomerang(message);
 
@@ -307,12 +309,11 @@ void Synchronization::informAssignment(blob data) {
     pthread_mutex_unlock(&syncMutex);
 }
 
-// TODO: Lamport timestamps?
-void Synchronization::updateWorkCache(string& identifier, WorkUnit& work, string& originalOwner) {
+void Synchronization::updateWorkCache(string& identifier, uint64_t time, WorkUnit& work, string& originalOwner) {
     if(originalOwner.empty()) {
         workAssignments.erase(originalOwner);  // De-zombify
     }
-    workAssignments[identifier] = work;
+    workAssignments[identifier] = make_pair(time, work);
 }
 
 

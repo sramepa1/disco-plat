@@ -117,6 +117,26 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
             break;
 
+        case NETWORK_REBUILT: {
+#ifdef VERBOSE
+            repo->getOutput() << "Message type is NETWORK_REBUILT" << endl;
+#endif
+
+            set<string> liveNodesSet;
+            for(unsigned i = 0; i < data.nodeIDSequence.length(); ++i) {
+                liveNodesSet.insert((const char*)data.nodeIDSequence[i].identifier);
+            }
+            repo->setLiveNodes(liveNodesSet);
+
+            set<unsigned> compIDSet;
+            for(unsigned i = 0; i < data.longDataSequence.length(); ++i) {
+                compIDSet.insert(data.longDataSequence[i]);
+            }
+            repo->setSurvivingComputations(compIDSet);
+
+            break;
+        }
+
         default :
             break;
     }
@@ -179,13 +199,26 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 repo->getOutput() << "Message type is WORK_ASSIGNMET" << endl;
 #endif
 
-                // TODO recovery and cache
-
-                if(data.asignee.identifier == networkModule->getMyID().identifier) {
-                    currentSyncModule->informAssignment(data);
+                if(currentSyncModule->getComputationID() == data.computationID) {
+                    // is that work for me
+                    if(data.asignee.identifier == networkModule->getMyID().identifier) {
+                        // take it
+                        currentSyncModule->informAssignment(data);
 #ifdef VERBOSE
-                    repo->getOutput() << "Message WORK_ASSIGNMET accepted for processing" << endl;
+                        repo->getOutput() << "Message WORK_ASSIGNMET accepted for processing" << endl;
 #endif
+                    } else {
+                        // update cache
+                        string identifier(data.asignee.identifier);
+                        string previosAsignee(data.dataStringA);
+                        struct WorkUnit unit;
+                        unit.depth = data.slotA;
+                        unit.instanceSize = data.slotB;
+                        unit.configStackVector =  vector<char>(data.charDataSequence.get_buffer(), data.charDataSequence.get_buffer() + data.charDataSequence.length());
+                        unit.intervalStackVector = vector<int>(data.longDataSequence.get_buffer(), data.longDataSequence.get_buffer() + data.longDataSequence.length());
+
+                        currentSyncModule->updateWorkCache(identifier, data.timestamp, unit, previosAsignee);
+                    }
                 }
 
                 if(originRightNeighbour) {
@@ -246,27 +279,6 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 }
 
                 break;
-
-            case NETWORK_REBUILT: {
-
-#ifdef VERBOSE
-                repo->getOutput() << "Message type is NETWORK_REBUILT" << endl;
-#endif
-
-                set<string> liveNodesSet;
-                for(unsigned i = 0; i < data.nodeIDSequence.length(); ++i) {
-                    liveNodesSet.insert((const char*)data.nodeIDSequence[i].identifier);
-                }
-                repo->setLiveNodes(liveNodesSet);
-
-                set<unsigned> compIDSet;
-                for(unsigned i = 0; i < data.longDataSequence.length(); ++i) {
-                    compIDSet.insert(data.longDataSequence[i]);
-                }
-                repo->setSurvivingComputations(compIDSet);
-
-                break;
-            }
 
             default :
                 break;

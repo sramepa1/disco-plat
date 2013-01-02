@@ -44,7 +44,7 @@ class Synchronization
     bool splitSuccesful;
 
     std::list<disco_plat::nodeID> workRequests;
-    std::map<std::string, WorkUnit> workAssignments;
+    std::map<std::string, std::pair<uint64_t, WorkUnit> > workAssignments;
 
     typedef bool color;
     color myColor;
@@ -96,9 +96,8 @@ public:
     void informNoAssignment();
     void informRequest(disco_plat::nodeID requesteeID);
 
-    // TODO: Lamport timestamps?
     // Pass empty string as originalOwner if this is not a de-zombification update
-    void updateWorkCache(std::string& identifier, WorkUnit& work, std::string& originalOwner);
+    void updateWorkCache(std::string& identifier, uint64_t time, WorkUnit& work, std::string& originalOwner);
 
     void informResult(disco_plat::blob data);
 

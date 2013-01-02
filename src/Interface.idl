@@ -33,8 +33,6 @@ struct blob {
     unsigned long slotB;
 
     nodeID asignee;
-    nodeID previousAsignee;
-
 };
 
 exception ConnectionError {
