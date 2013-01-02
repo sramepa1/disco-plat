@@ -275,12 +275,14 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 break;
         }
 
+        if(sendFurther) {
+            currentSyncModule->pingReset();
+        }
     }
 
     repo->unlockCurrentSyncModule();
 
     if(sendFurther) {
-        currentSyncModule->pingReset();
         RightNeighbourIface& right = networkModule->getMyRightInterface();
         right.Boomerang(myData);
     }
