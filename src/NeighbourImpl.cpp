@@ -159,8 +159,6 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
     if(currentSyncModule != NULL) {
 
-        currentSyncModule->pingReset();
-
         switch(data.messageType) {
             case PING :
 
@@ -263,11 +261,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 #endif
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
-                    currentSyncModule->informTerminate();
-                }
-
-                if(originRightNeighbour) {
-                    sendFurther = false;
+                    currentSyncModule->informTerminate(data);
                 }
 
                 break;
@@ -281,6 +275,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
     repo->unlockCurrentSyncModule();
 
     if(sendFurther) {
+        currentSyncModule->pingReset();
         RightNeighbourIface& right = networkModule->getMyRightInterface();
         right.Boomerang(myData);
     }

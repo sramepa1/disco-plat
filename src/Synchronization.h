@@ -108,7 +108,7 @@ public:
     void informMyToken(disco_plat::blob data);
     void informForeignToken(disco_plat::blob data);
 
-    void informTerminate();
+    void informTerminate(disco_plat::blob data);
 
     void pingReset() {
         pthread_mutex_lock(&syncMutex);

@@ -294,7 +294,22 @@ bool Synchronization::isWorkAvailable() {
                 message.computationID = computationID;
                 message.messageType = TERMINATE;
 
+                message.slotA = (unsigned int) mySolutionOpt;
+
+                message.charDataSequence.length(myConfiguration.size());
+                for(unsigned int i = 0; i < myConfiguration.size(); ++i) {
+                    message.charDataSequence[i] = myConfiguration[i];
+                }
+
+#ifdef VERBOSE
+                repo->getOutput() << "Waiting for all nodes to terminate" << endl;
+#endif
+
                 rightNb->Boomerang(message);
+
+                while(!commandTerminate) {
+                    pthread_cond_wait(&idleCondition, &syncMutex);
+                }
 
 #ifdef VERBOSE
                 repo->getOutput() << "Executing my termination" << endl;
@@ -452,15 +467,24 @@ void Synchronization::informForeignToken(blob data) {
 }
 
 
-void Synchronization::informTerminate() {
+void Synchronization::informTerminate(blob data) {
     pthread_mutex_lock(&syncMutex);
+
+    vector<char> tmp(data.charDataSequence.length());
+    for(unsigned int i = 0; i < data.charDataSequence.length(); ++i) {
+        tmp[i] = data.charDataSequence[i];
+    }
+
+    circleSolutionOpt = data.slotA;
+    circleConfiguration = tmp;
+
+    comp->setSolution(circleSolutionOpt, circleConfiguration, false);
 
     commandTerminate = true;
     pthread_cond_signal(&idleCondition);
 
     pthread_mutex_unlock(&syncMutex);
 }
-
 
 bool Synchronization::isWorking() {
     pthread_mutex_lock(&stateMutex);
