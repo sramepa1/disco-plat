@@ -186,12 +186,14 @@ Network::~Network() {
     #endif
 
     while(*repo->getLiveNodes().begin() != string((const char*)myID.identifier)) {
+        cout << "first node of set: " << *repo->getLiveNodes().begin() << endl;
         blob data;
         data.sourceNode = myID;
         data.messageType = PING;
         getMyRightInterface().Boomerang(data);
         usleep(100000);
     }
+    cout << "first node of set: " << *repo->getLiveNodes().begin() << endl;
 
     sendThreadRunning = false;
     pthread_join(sendThread, NULL);
@@ -364,6 +366,7 @@ void Network::reportDeadLeftNode() {
         BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)reportNodeID.identifier, leftRemoteObject,
                         RightNeighbour);
 
+        cout << "RebuildNetwork sent" << endl;
         leftRemoteObject->RebuildNetwork(myID);
 
         set<string> liveNodesSet;
@@ -383,6 +386,7 @@ void Network::reportDeadLeftNode() {
         data.messageType = NETWORK_REBUILT;
         data.nodeIDSequence = liveNodes;
         data.longDataSequence = liveCompIDs;
+        cout << "Boomerang NETWORK_REBUILT sent" << endl;
         getMyRightInterface().Boomerang(data);
 
     } catch(...) {
@@ -405,6 +409,7 @@ void Network::reportDeadRightNode() {
             newNodeSequence[0] = myID;
             newCompSequence[0] = repo->getCurrentComputationID();
 
+            cout << "NodeDied sent" << endl;
             leftRemoteObject->NodeDied(getMyID(), newNodeSequence, newCompSequence);
             networkBroken = true;
         } catch(COMM_FAILURE&) {

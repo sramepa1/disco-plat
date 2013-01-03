@@ -39,7 +39,7 @@ public:
 //  LeftNeighbour
 
 class Left_NodeDied : public QueueItem {
-    const ::disco_plat::nodeID& reportingNodeID;
+    const ::disco_plat::nodeID reportingNodeID;
     const SequenceTmpl< ::disco_plat::nodeID, MICO_TID_DEF> liveNodes;
     const SequenceTmpl<CORBA::Long,MICO_TID_DEF> compIDs;
 public:

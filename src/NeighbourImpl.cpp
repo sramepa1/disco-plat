@@ -359,6 +359,8 @@ void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, SequenceTmpl<no
                                   SequenceTmpl<Long, MICO_TID_DEF> compIDs) {
 
     repo->getOutput() << "Recieved message NodeDied from right neighbour" << endl;
+    cout << "report ID: " << reportingNodeID.identifier << endl;
+
     SequenceTmpl<nodeID, MICO_TID_DEF> newNodeSequence;
     SequenceTmpl<Long, MICO_TID_DEF> newCompSequence;
     newNodeSequence.length(liveNodes.length() + 1);
