@@ -18,6 +18,9 @@
 
 #define PING_COUNTER_MAX 15
 
+#define SOLUTION_ABSOLUTE 1
+#define SOLUTION_TERMINAL 2
+
 enum SyncState { WORKING, SYNCHRONIZING, IDLING, TERMINATING };
 
 
@@ -70,6 +73,7 @@ class Synchronization
     pthread_mutex_t syncMutex;
     pthread_mutex_t workCacheMutex;
     pthread_cond_t idleCondition;
+    pthread_cond_t terminalCondition;
 
 
     void sendTerminationToken();
@@ -114,7 +118,7 @@ public:
     // Hard erase without moving. Only use when the cached work can't be lost.
     void killZombie(const std::string& zombieIdentifier);
 
-    void informResult(disco_plat::blob data);
+    void informResult(disco_plat::blob& data);
 
     void informMyToken(disco_plat::blob data);
     void informForeignToken(disco_plat::blob data);

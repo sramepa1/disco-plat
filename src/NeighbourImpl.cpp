@@ -255,11 +255,7 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 #endif
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
-                    currentSyncModule->informResult(data);
-                }
-
-                if(originRightNeighbour) {
-                    sendFurther = false;
+                    currentSyncModule->informResult(myData);
                 }
 
                 break;

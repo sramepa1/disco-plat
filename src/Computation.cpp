@@ -50,9 +50,16 @@ void Computation::setSync(Synchronization* sync) {
 void Computation::start(bool localStart) {
     repo->getOutput() << (localStart ? "Initiating" : "Joining") << " computation " << sync->getComputationID() << endl;
 
-    if(!localStart && !sync->isWorkAvailable()) {
-        repo->getOutput() << "Late to the party... Joined a computation where noone wants to share work. Quitting." << endl;
-        return;
+    if(!localStart) {
+        if(!sync->isWorkAvailable()) {
+            repo->getOutput() << "Late to the party... Joined a computation where noone wants to share work. Quitting."
+                              << endl;
+            return;
+        }
+
+        // hack: broadcast a stupid solution to acquire current one from the circle in next synchronization
+        newSolutionFound = true;
+        sync->synchronize();
     }
 
     try {

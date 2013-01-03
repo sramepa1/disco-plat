@@ -18,6 +18,7 @@ Synchronization::Synchronization(Computation* comp, unsigned int id) : comp(comp
     pthread_mutex_init(&syncMutex, NULL);
     pthread_mutex_init(&workCacheMutex, NULL);
     pthread_cond_init(&idleCondition, NULL);
+    pthread_cond_init(&terminalCondition, NULL);
 
     haveNewCirlceSolution = false;
     haveMySolution = false;
@@ -33,6 +34,16 @@ Synchronization::Synchronization(Computation* comp, unsigned int id) : comp(comp
 
     pingCounter = 0;
 
+    pair<opt_t, vector<char> > tmp = comp->getSolution();
+    mySolutionOpt = tmp.first;
+    circleSolutionOpt = mySolutionOpt;
+
+    myConfiguration = tmp.second;
+    circleConfiguration = myConfiguration;
+
+    mySolutionAbsolute = comp->isSolutionAbsolute();
+    circleSolutionAbsolute = false;
+
     myColor = WHITE;
 }
 
@@ -42,6 +53,7 @@ Synchronization::~Synchronization()
     pthread_mutex_destroy(&syncMutex);
     pthread_mutex_destroy(&workCacheMutex);
     pthread_cond_destroy(&idleCondition);
+    pthread_cond_destroy(&terminalCondition);
 }
 
 
@@ -50,8 +62,15 @@ void Synchronization::synchronize() {
     if(networkModule->isSingle()) {
         #ifdef VERBOSE
         if(comp->hasNewSolution()) {
-            comp->getSolution();
+            pair<opt_t, vector<char> > tmp = comp->getSolution();
+            mySolutionOpt = tmp.first;
+            circleSolutionOpt = mySolutionOpt;
+
+            myConfiguration = tmp.second;
+            circleConfiguration = myConfiguration;
+
             repo->getOutput() << "I may be alone, but I have a new optimum: " << comp->getOptimum() << endl;
+
         }
         #endif
         return;
@@ -117,7 +136,7 @@ void Synchronization::synchronize() {
         message.messageType = RESULT;
 
         message.slotA = (unsigned int) mySolutionOpt;
-        message.slotB = (unsigned int) mySolutionAbsolute;
+        message.slotB = (unsigned int) ( mySolutionAbsolute ? SOLUTION_ABSOLUTE : 0);
 
         message.charDataSequence.length(myConfiguration.size());
         for(unsigned int i = 0; i < myConfiguration.size(); ++i) {
@@ -330,6 +349,31 @@ bool Synchronization::isWorkAvailable() {
             }
 
             if(recievedColor == WHITE) {
+
+                // gather best result
+                pair<opt_t, vector<char> > myFinalSolution = comp->getSolution();
+                mySolutionOpt = myFinalSolution.first;
+                myConfiguration = myFinalSolution.second;
+
+                blob terminalSolutionMessage;
+                terminalSolutionMessage.sourceNode = networkModule->getMyID();
+                terminalSolutionMessage.computationID = computationID;
+                terminalSolutionMessage.messageType = RESULT;
+
+                terminalSolutionMessage.slotA = (unsigned int) mySolutionOpt;
+                terminalSolutionMessage.slotB = SOLUTION_TERMINAL;
+
+                terminalSolutionMessage.charDataSequence.length(myConfiguration.size());
+                for(unsigned int i = 0; i < myConfiguration.size(); ++i) {
+                    terminalSolutionMessage.charDataSequence[i] = myConfiguration[i];
+                }
+
+                rightNb->Boomerang(terminalSolutionMessage);
+
+                // suspend thread until the boomerand returns
+                pthread_cond_wait(&terminalCondition, &syncMutex);
+
+
 #ifdef VERBOSE
                 repo->getOutput() << "Sending command to terminate the computation" << endl;
 #endif
@@ -509,7 +553,8 @@ void Synchronization::informRequest(disco_plat::nodeID requesteeID) {
     pthread_mutex_unlock(&syncMutex);
 }
 
-void Synchronization::informResult(blob data) {
+void Synchronization::informResult(blob& data) {
+
     pthread_mutex_lock(&syncMutex);
 
     if(comp->isBetter(data.slotA, circleSolutionOpt)) {
@@ -520,9 +565,24 @@ void Synchronization::informResult(blob data) {
 
         circleSolutionOpt = data.slotA;
         circleConfiguration = tmp;
-        circleSolutionAbsolute = (bool) data.slotB;
+        circleSolutionAbsolute = (bool) (data.slotB & SOLUTION_ABSOLUTE);
 
         haveNewCirlceSolution = true;
+
+    } else {
+
+        data.slotA = (unsigned int) circleSolutionOpt;
+        data.slotB |= (unsigned int) circleSolutionAbsolute;
+
+        data.charDataSequence.length(circleConfiguration.size());
+        for(unsigned int i = 0; i < circleConfiguration.size(); ++i) {
+            data.charDataSequence[i] = circleConfiguration[i];
+        }
+    }
+
+    if(data.slotB & (unsigned int)SOLUTION_TERMINAL) {
+
+        pthread_cond_signal(&terminalCondition);
     }
 
     pthread_mutex_unlock(&syncMutex);
