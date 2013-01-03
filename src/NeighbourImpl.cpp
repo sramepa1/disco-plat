@@ -127,6 +127,10 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 #ifdef VERBOSE
             repo->getOutput() << "Recieved message Boomerang of type  NETWORK_REBUILT" << endl;
 #endif
+            if(!repo->isAlive(string(myData.sourceNode.identifier))) {
+                return;
+            }
+
             if(sendFurther) {
                 networkModule->getMyRightInterface().Boomerang(myData);
             }
