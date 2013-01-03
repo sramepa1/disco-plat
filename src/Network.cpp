@@ -185,10 +185,18 @@ Network::~Network() {
     cout << "Node (address: " << myID.identifier << ") - closing network module" << endl;
     #endif
 
-    sendThreadRunning = false;
-    orb->shutdown(TRUE);
+    while(*repo->getLiveNodes().begin() != string((const char*)myID.identifier)) {
+        blob data;
+        data.sourceNode = myID;
+        data.messageType = PING;
+        getMyRightInterface().Boomerang(data);
+        usleep(100000);
+    }
 
+    sendThreadRunning = false;
     pthread_join(sendThread, NULL);
+
+    orb->shutdown(TRUE);
     pthread_join(recvThread, NULL);
 
     pthread_mutex_destroy(&queueMutex);
@@ -200,9 +208,11 @@ Network::~Network() {
 }
 
 void Network::enqueItem(QueueItem* item) {
-    pthread_mutex_lock(&queueMutex);
-    sendQueue.push_back(item);
-    pthread_mutex_unlock(&queueMutex);
+    if(sendThreadRunning) {
+        pthread_mutex_lock(&queueMutex);
+        sendQueue.push_back(item);
+        pthread_mutex_unlock(&queueMutex);
+    }
 }
 
 
