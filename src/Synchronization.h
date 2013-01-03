@@ -45,6 +45,8 @@ class Synchronization
 
     bool isWorkingState;
     bool workReciewed;
+    bool workRequestPending;
+    bool isZombifyingState;
     bool splitSuccesful;
 
     int pingCounter;
@@ -71,6 +73,7 @@ class Synchronization
 
 
     void sendTerminationToken();
+    void sendWorkRequest();
 
 
     // DISABLED
@@ -118,12 +121,16 @@ public:
 
     void informTerminate(disco_plat::blob data);
 
+    void informNetworkRebuild();
+    void informZombifyFinish();
+
     void pingReset() {
         pthread_mutex_lock(&syncMutex);
         pingCounter = 0;
         pthread_mutex_unlock(&syncMutex);
     }
 
+    bool isZombifying();
     bool isWorking();
     bool hasWorkToSplit();
 

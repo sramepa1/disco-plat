@@ -41,12 +41,12 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
     bool originRightNeighbour = false;
     bool sendFurther = true;
 
-    if(data.sourceNode.identifier == networkModule->getMyID().identifier) {
+    if(strcmp(data.sourceNode.identifier, networkModule->getMyID().identifier) == 0) {
         sendFurther = false;
         originMe = true;
     }
 
-    if(data.sourceNode.identifier == networkModule->getRightID().identifier) {
+    if(strcmp(data.sourceNode.identifier, networkModule->getRightID().identifier) == 0) {
         originRightNeighbour = true;
     }
 
@@ -131,6 +131,16 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
             }
             repo->setSurvivingComputations(compIDSet);
 
+            // zombify my request if any
+            repo->lockCurrentSyncModule();
+
+            Synchronization* currentSyncModule = repo->getCurrentSyncModule();
+            if(currentSyncModule != NULL) {
+                currentSyncModule->informNetworkRebuild();
+            }
+
+            repo->unlockCurrentSyncModule();
+
             break;
         }
 
@@ -172,14 +182,18 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                 repo->getOutput() << "Recieved message Boomerang of type  WORK_REQUEST" << endl;
 #endif
 
-                // TODO recovery and cache
-
                 // request for my computatin ?
                 if(currentSyncModule->getComputationID() == data.computationID)
                 {
                     if(originMe) // my own rejected request
                     {
-                        currentSyncModule->informNoAssignment();
+                        if(!currentSyncModule->isZombifying()) {
+                            currentSyncModule->informNoAssignment();
+                        } else {
+#ifdef VERBOSE
+                            repo->getOutput() << "Zombifying under way - WORK DENIAL dropped" << endl;
+#endif
+                        }
                     }
                     else if(currentSyncModule->hasWorkToSplit()) // request for me
                     {
@@ -200,18 +214,25 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
                     // is that work for me
                     if(strcmp(data.asignee.identifier, networkModule->getMyID().identifier) == 0) {
 
-                        // check original owner
-                        string zombieIdentifer(data.dataStringA);
-                        if(!zombieIdentifer.empty()) {
-                            currentSyncModule->killZombie(zombieIdentifer);
-                            #ifdef VERBOSE
-                            repo->getOutput() << "Received self-assigned zombie work, originally owned by "
-                                              << zombieIdentifer << endl;
-                            #endif
-                        }
+                        if(!currentSyncModule->isZombifying()) {
+                            // check original owner
+                            string zombieIdentifer(data.dataStringA);
+                            if(!zombieIdentifer.empty()) {
+                                currentSyncModule->killZombie(zombieIdentifer);
+                                #ifdef VERBOSE
+                                repo->getOutput() << "Received self-assigned zombie work, originally owned by "
+                                                  << zombieIdentifer << endl;
+                                #endif
+                            }
 
-                        // take it
-                        currentSyncModule->informAssignment(data);
+                            // take it
+                            currentSyncModule->informAssignment(data);
+
+                        } else {
+#ifdef VERBOSE
+                            repo->getOutput() << "Zombifying under way - WORK ASSIGNMET dropped" << endl;
+#endif
+                        }
 
                     } else {
 
@@ -270,6 +291,28 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
             default :
                 break;
+
+            case ZOMBIFY :
+
+#ifdef VERBOSE
+                repo->getOutput() << "Recieved message Boomerang of type  ZOMBIFY" << endl;
+#endif
+
+                if(currentSyncModule->getComputationID() == data.computationID) {
+
+                    if(originMe) {
+                        currentSyncModule->informZombifyFinish();
+                    } else {
+                        set<string> deadIdentifiers;
+                        string s(data.asignee.identifier);
+                        deadIdentifiers.insert(s);
+                        currentSyncModule->zombify(deadIdentifiers);
+                    }
+                }
+
+
+                break;
+
         }
 
         if(sendFurther) {

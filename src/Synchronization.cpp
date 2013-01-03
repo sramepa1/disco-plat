@@ -28,6 +28,8 @@ Synchronization::Synchronization(Computation* comp, unsigned int id) : comp(comp
     terminationLeader = false;
     commandTerminate = false;
     terminationToken = false;
+    workRequestPending = false;
+    isZombifyingState = false;
 
     pingCounter = 0;
 
@@ -265,8 +267,6 @@ bool Synchronization::isWorkAvailable() {
         return false;
     }
 
-
-
     pthread_mutex_lock(&stateMutex);
     isWorkingState = false;
     pthread_mutex_unlock(&stateMutex);
@@ -274,70 +274,12 @@ bool Synchronization::isWorkAvailable() {
     // ask for more work
 
     pthread_mutex_lock(&syncMutex);
-    pthread_mutex_lock(&workCacheMutex);
-    map<string, pair<uint64_t, WorkUnit> >::iterator zombit = zombieWork.begin();
-    if(zombit != zombieWork.end()) {
-        int rnd = rand() % zombieWork.size();
-        for(int i = 0; i < rnd; i++) {
-            ++zombit;
-        }
 
-        // Assign it to myself
-
-        blob message;
-        message.sourceNode = networkModule->getMyID();
-        message.computationID = computationID;
-        message.messageType = WORK_ASSIGNMET;
-
-        message.asignee = networkModule->getMyID();
-
-        WorkUnit& unit = zombit->second.second;
-
-        message.slotA = unit.depth;
-        message.slotB = unit.instanceSize;
-
-        message.charDataSequence.length(unit.configStackVector.size());
-        for(unsigned int i = 0; i < unit.configStackVector.size(); ++i) {
-            message.charDataSequence[i] = unit.configStackVector[i];
-        }
-
-        message.longDataSequence.length(unit.intervalStackVector.size());
-        for(unsigned int i = 0; i < unit.intervalStackVector.size(); ++i) {
-            message.longDataSequence[i] = unit.intervalStackVector[i];
-        }
-
-        message.dataStringA = zombit->first.c_str();
-
-        ostringstream strStamp;
-        strStamp << zombit->second.first;
-        message.dataStringB = strStamp.str().c_str();
-
-        rightNb->Boomerang(message);
-
-#ifdef VERBOSE
-        repo->getOutput() << "Assigning ZOMBIE WORK to myself, original owner was " << zombit->first << endl;
-#endif
-
-        // zombit will not be erased here - it will be done upon receive
-
-        pthread_mutex_unlock(&workCacheMutex);
-
-    } else {
-
-        pthread_mutex_unlock(&workCacheMutex);
-
-        // Regular request
-
-        blob message;
-        message.sourceNode = networkModule->getMyID();
-        message.computationID = computationID;
-        message.messageType = WORK_REQUEST;
-
-        rightNb->Boomerang(message);
-    }
+    sendWorkRequest();
 
     workReciewed = false;
     pthread_cond_wait(&idleCondition, &syncMutex);
+    workRequestPending = false;
 
     if(workReciewed) {
         pthread_mutex_unlock(&syncMutex);
@@ -351,7 +293,6 @@ bool Synchronization::isWorkAvailable() {
 #endif
         return true;
     }
-
 
     // tokenized termination detection
     terminating = true;
@@ -437,26 +378,6 @@ bool Synchronization::isWorkAvailable() {
 #endif
     pthread_mutex_unlock(&syncMutex);
     return false;
-}
-
-void Synchronization::informAssignment(blob data) {
-    pthread_mutex_lock(&syncMutex);
-
-    tmpUnit.depth = data.slotA;
-    tmpUnit.instanceSize = data.slotB;
-    tmpUnit.configStackVector =  vector<char>(data.charDataSequence.get_buffer(), data.charDataSequence.get_buffer() + data.charDataSequence.length());
-    tmpUnit.intervalStackVector = vector<int>(data.longDataSequence.get_buffer(), data.longDataSequence.get_buffer() + data.longDataSequence.length());
-
-    comp->setWork(tmpUnit);
-
-#ifdef VERBOSE
-    repo->getOutput() << "Accepting assigned WORK from " << data.sourceNode.identifier << endl;
-#endif
-
-    workReciewed = true;
-    pthread_cond_signal(&idleCondition);
-
-    pthread_mutex_unlock(&syncMutex);
 }
 
 
@@ -545,6 +466,27 @@ void Synchronization::killZombie(const string& zombieIdentifier) {
     #endif
     zombieWork.erase(zombieIdentifier);
     pthread_mutex_unlock(&workCacheMutex);
+}
+
+
+void Synchronization::informAssignment(blob data) {
+    pthread_mutex_lock(&syncMutex);
+
+    tmpUnit.depth = data.slotA;
+    tmpUnit.instanceSize = data.slotB;
+    tmpUnit.configStackVector =  vector<char>(data.charDataSequence.get_buffer(), data.charDataSequence.get_buffer() + data.charDataSequence.length());
+    tmpUnit.intervalStackVector = vector<int>(data.longDataSequence.get_buffer(), data.longDataSequence.get_buffer() + data.longDataSequence.length());
+
+    comp->setWork(tmpUnit);
+
+#ifdef VERBOSE
+    repo->getOutput() << "Accepting assigned WORK from " << data.sourceNode.identifier << endl;
+#endif
+
+    workReciewed = true;
+    pthread_cond_signal(&idleCondition);
+
+    pthread_mutex_unlock(&syncMutex);
 }
 
 
@@ -663,6 +605,56 @@ void Synchronization::informTerminate(blob data) {
     pthread_mutex_unlock(&syncMutex);
 }
 
+
+void Synchronization::informNetworkRebuild() {
+    pthread_mutex_lock(&syncMutex);
+
+    if(workRequestPending) {
+
+#ifdef VERBOSE
+        repo->getOutput() << "I have a pending work request - starting zombifying process" << endl;
+#endif
+
+        blob message;
+        message.sourceNode = networkModule->getMyID();
+        message.computationID = computationID;
+        message.messageType = ZOMBIFY;
+
+        message.asignee = networkModule->getMyID();
+
+        rightNb->Boomerang(message);
+
+        isZombifyingState = true;
+    }
+
+    pthread_mutex_unlock(&syncMutex);
+}
+
+
+void Synchronization::informZombifyFinish() {
+    pthread_mutex_lock(&syncMutex);
+
+    sendWorkRequest();
+
+#ifdef VERBOSE
+        repo->getOutput() << "Zombifying finished - returning to normal" << endl;
+#endif
+
+    isZombifyingState = false;
+    pthread_cond_signal(&idleCondition);
+
+    pthread_mutex_unlock(&syncMutex);
+}
+
+
+bool Synchronization::isZombifying() {
+    pthread_mutex_lock(&syncMutex);
+    bool tmp = isZombifyingState;
+    pthread_mutex_unlock(&syncMutex);
+    return tmp;
+}
+
+
 bool Synchronization::isWorking() {
     pthread_mutex_lock(&stateMutex);
     bool tmp = isWorkingState;
@@ -672,7 +664,7 @@ bool Synchronization::isWorking() {
 }
 
 bool Synchronization::hasWorkToSplit() {
-    pthread_mutex_lock(&stateMutex);
+    pthread_mutex_lock(&stateMutex); // TODO MISSINg mutex lock maybe ?
     bool tmp = isWorkingState && splitSuccesful;
     pthread_mutex_unlock(&stateMutex);
 
@@ -701,3 +693,74 @@ void Synchronization::sendTerminationToken() {
     myColor = WHITE;
 }
 
+
+void Synchronization::sendWorkRequest() {
+    pthread_mutex_lock(&workCacheMutex);
+    map<string, pair<uint64_t, WorkUnit> >::iterator zombit = zombieWork.begin();
+    if(zombit != zombieWork.end()) {
+        int rnd = rand() % zombieWork.size();
+        for(int i = 0; i < rnd; i++) {
+            ++zombit;
+        }
+
+        // Assign it to myself
+
+        blob message;
+        message.sourceNode = networkModule->getMyID();
+        message.computationID = computationID;
+        message.messageType = WORK_ASSIGNMET;
+
+        message.asignee = networkModule->getMyID();
+
+        WorkUnit& unit = zombit->second.second;
+
+        message.slotA = unit.depth;
+        message.slotB = unit.instanceSize;
+
+        message.charDataSequence.length(unit.configStackVector.size());
+        for(unsigned int i = 0; i < unit.configStackVector.size(); ++i) {
+            message.charDataSequence[i] = unit.configStackVector[i];
+        }
+
+        message.longDataSequence.length(unit.intervalStackVector.size());
+        for(unsigned int i = 0; i < unit.intervalStackVector.size(); ++i) {
+            message.longDataSequence[i] = unit.intervalStackVector[i];
+        }
+
+        message.dataStringA = zombit->first.c_str();
+
+        ostringstream strStamp;
+        strStamp << zombit->second.first;
+        message.dataStringB = strStamp.str().c_str();
+
+        rightNb->Boomerang(message);
+
+#ifdef VERBOSE
+        repo->getOutput() << "Assigning ZOMBIE WORK to myself, original owner was " << zombit->first << endl;
+#endif
+
+        // zombit will not be erased here - it will be done upon receive
+
+        pthread_mutex_unlock(&workCacheMutex);
+
+    } else {
+
+        pthread_mutex_unlock(&workCacheMutex);
+
+        // Regular request
+
+        blob message;
+        message.sourceNode = networkModule->getMyID();
+        message.computationID = computationID;
+        message.messageType = WORK_REQUEST;
+
+        rightNb->Boomerang(message);
+
+        workRequestPending = true;
+
+#ifdef VERBOSE
+        repo->getOutput() << "Sending standard WORK REQUEST" << endl;
+#endif
+
+    }
+}

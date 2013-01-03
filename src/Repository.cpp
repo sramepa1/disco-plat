@@ -80,7 +80,7 @@ unsigned int Repository::getCurrentComputationID() {
 unsigned int Repository::getFreeID() {
 
     if(networkModule->isSingle()) {
-        return maxID++;
+        return maxID;
     }
 
 
@@ -113,7 +113,6 @@ unsigned int Repository::getFreeID() {
 
     isFreeIDSleeping = false;
     pthread_mutex_unlock(&dataMutex);
-
 
     return maxID;
 }
