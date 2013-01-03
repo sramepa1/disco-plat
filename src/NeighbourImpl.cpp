@@ -54,6 +54,15 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
     ////////// General boomerang types
     switch(data.messageType) {
 
+        case PING :
+
+#ifdef VERBOSE
+            repo->getOutput() << "Recieved message Boomerang of type  PING" << endl;
+#endif
+            sendFurther = false;
+
+            break;
+
         case FREE_ID_SEARCH :
 
 #ifdef VERBOSE
@@ -118,6 +127,10 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 #ifdef VERBOSE
             repo->getOutput() << "Recieved message Boomerang of type  NETWORK_REBUILT" << endl;
 #endif
+            if(sendFurther) {
+                networkModule->getMyRightInterface().Boomerang(myData);
+            }
+            sendFurther = false;
 
             set<string> liveNodesSet;
             for(unsigned i = 0; i < data.nodeIDSequence.length(); ++i) {
@@ -157,14 +170,6 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
     if(currentSyncModule != NULL) {
 
         switch(data.messageType) {
-            case PING :
-
-#ifdef VERBOSE
-                repo->getOutput() << "Recieved message Boomerang of type  PING" << endl;
-#endif
-                sendFurther = false;
-
-                break;
 
             case WORK_REQUEST :
 
