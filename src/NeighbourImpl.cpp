@@ -286,6 +286,11 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
                 if(currentSyncModule->getComputationID() == data.computationID) {
                     currentSyncModule->informTerminate(data);
+                } else {
+#ifdef VERBOSE
+                repo->getOutput() << "Deleting terminated computation from cache" << endl;
+#endif
+                    repo->destroyComputation(data.computationID);
                 }
 
                 break;
