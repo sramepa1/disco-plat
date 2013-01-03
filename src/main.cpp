@@ -129,7 +129,7 @@ int main(int argc, char** argv) {
             computationID = repo->getAnyValidID();
         }
 
-        bool localStart = address == NULL;
+        bool localStart = file != NULL;
 
         do {
             repo->startComputation(computationID, localStart);

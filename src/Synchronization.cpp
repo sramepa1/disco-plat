@@ -274,9 +274,6 @@ bool Synchronization::isWorkAvailable() {
     // ask for more work
 
     pthread_mutex_lock(&syncMutex);
-
-    // try zombie work first
-
     pthread_mutex_lock(&workCacheMutex);
     map<string, pair<uint64_t, WorkUnit> >::iterator zombit = zombieWork.begin();
     if(zombit != zombieWork.end()) {
