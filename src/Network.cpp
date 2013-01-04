@@ -186,14 +186,14 @@ Network::~Network() {
     #endif
 
     while(*repo->getLiveNodes().begin() != string((const char*)myID.identifier)) {
-        cout << "first node of set: " << *repo->getLiveNodes().begin() << endl;
+        //cout << "first node of set: " << *repo->getLiveNodes().begin() << endl;
         blob data;
         data.sourceNode = myID;
         data.messageType = PING;
         getMyRightInterface().Boomerang(data);
         usleep(100000);
     }
-    cout << "first node of set: " << *repo->getLiveNodes().begin() << endl;
+    //cout << "first node of set: " << *repo->getLiveNodes().begin() << endl;
 
     sendThreadRunning = false;
     pthread_join(sendThread, NULL);
@@ -277,12 +277,16 @@ void* Network::sendThreadMain(void* ptr) {
             try {
                 current->sendMe(make_pair(instance->rightRemoteObject, instance->leftRemoteObject));
             } catch(LeftNeighbourCommFailure&) {
+                #ifdef VERBOSE
                 cerr << "send thread - Left neighbour disconnected" << endl;
+                #endif
                 pthread_mutex_unlock(&instance->bindMutex);
                 instance->reportDeadLeftNode();
                 goto mutexJump;
             } catch(RightNeighbourCommFailure&) {
+                #ifdef VERBOSE
                 cerr << "send thread - Right neighbour disconnected" << endl;
+                #endif
                 pthread_mutex_unlock(&instance->bindMutex);
                 instance->reportDeadRightNode();
                 goto mutexJump;
@@ -365,8 +369,9 @@ void Network::reportDeadLeftNode() {
         leftID = reportNodeID;
         BIND_AND_ASSIGN("IDL:disco_plat/RightNeighbour:1.0", (const char*)reportNodeID.identifier, leftRemoteObject,
                         RightNeighbour);
-
+        #ifdef VERBOSE
         cout << "RebuildNetwork sent" << endl;
+        #endif
         leftRemoteObject->RebuildNetwork(myID);
 
         set<string> liveNodesSet;
@@ -409,7 +414,9 @@ void Network::reportDeadRightNode() {
             newNodeSequence[0] = myID;
             newCompSequence[0] = repo->getCurrentComputationID();
 
+            #ifdef VERBOSE
             cout << "NodeDied sent" << endl;
+            #endif
             leftRemoteObject->NodeDied(getMyID(), newNodeSequence, newCompSequence);
             networkBroken = true;
         } catch(COMM_FAILURE&) {

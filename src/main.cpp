@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
 
     int port = DEFAULT_PORT;
     const char* address = NULL;
-    const char* name = "ham0";
+    const char* name = "eth0";
     const char* file = NULL;
     const char* output = "";
 

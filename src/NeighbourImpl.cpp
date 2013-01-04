@@ -18,7 +18,9 @@ using namespace CORBA;
 //  LeftNeighbour
 
 void LeftNeighbourImpl::ConnectAsLeftNode(const nodeID& newNodeID, nodeID_out oldLeftNodeID) {
+#ifdef VERBOSE
     repo->getOutput() << "Recieved message ConnectAsLeftNode from left neighbour" << endl;
+#endif
 
     if(strlen(newNodeID.algorithm) !=0 && strcmp(newNodeID.algorithm, networkModule->getMyID().algorithm) != 0) {
         throw ConnectionError("Used algorithms does not match!");
@@ -341,7 +343,9 @@ void LeftNeighbourImpl::Boomerang(const blob& data) {
 
 
 void LeftNeighbourImpl::AbortingBoomerang() {
+    #ifdef VERBOSE
     repo->getOutput() << "Recieved message AbortingBoomerang from left neighbour" << endl;
+    #endif
     networkModule->getMyRightInterface().AbortingBoomerang();
 }
 
@@ -349,25 +353,29 @@ void LeftNeighbourImpl::AbortingBoomerang() {
 //  RightNeighbour
 
 void RightNeighbourImpl::BuildNetAndRequestData(const nodeID& newNeighbourID) {
+    #ifdef VERBOSE
     repo->getOutput() << "Recieved message BuildNetAndRequestData from right neighbour" << endl;
+    #endif
     networkModule->changeRightNeighbour(newNeighbourID);
 
-#ifdef VERBOSE
-        repo->getOutput() << "Sending all instance data to right neighbour" << endl;
-#endif
+    #ifdef VERBOSE
+    repo->getOutput() << "Sending all instance data to right neighbour" << endl;
+    #endif
 
     repo->sendAllData();
 
-#ifdef VERBOSE
-        repo->getOutput() << "Sending data was completed" << endl;
-#endif
+    #ifdef VERBOSE
+    repo->getOutput() << "Sending data was completed" << endl;
+    #endif
 }
 
 
 void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, SequenceTmpl<nodeID, MICO_TID_DEF> liveNodes,
                                   SequenceTmpl<Long, MICO_TID_DEF> compIDs) {
 
+    #ifdef VERBOSE
     repo->getOutput() << "Recieved message NodeDied from right neighbour" << endl;
+    #endif
     cout << "report ID: " << reportingNodeID.identifier << endl;
 
     SequenceTmpl<nodeID, MICO_TID_DEF> newNodeSequence;
@@ -388,7 +396,9 @@ void RightNeighbourImpl::NodeDied(const nodeID& reportingNodeID, SequenceTmpl<no
 
 
 void RightNeighbourImpl::RebuildNetwork(const nodeID& newNeighbourID) {
+    #ifdef VERBOSE
     repo->getOutput() << "Recieved message RebuildNetwork from right neighbour" << endl;
+    #endif
     networkModule->changeRightNeighbour(newNeighbourID);
     networkModule->repairNetwork();
 }

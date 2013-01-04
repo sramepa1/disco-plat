@@ -1,0 +1,85 @@
+
+                            DISCO-PLAT
+
+            A simple distributed computation platform.
+
+
+
+Semestral project for the Distributed Systems and Computations course (MI-DSV)
+at the Faculty of Information Technology, Czech Technical University.
+
+Authors:
+    Sandr Ota       (sandrota@fit.cvut.cz)
+    Šmarda Martin   (smardmar@fit.cvut.cz)
+    Šrámek Pavel    (sramepa1@fit.cvut.cz)
+
+
+Disco-plat is a platform for distributed computations operating as a depth-first
+search over a stack of byte vectors.
+
+Features:
+ * Distributed nodes are capable of splitting the search space and sharing optima
+ * Multiple computation instances may be present in the system at the same time
+ * Any problem can be computed, as long as its byte vector DFS algorithm
+   is implemented (example implementation includes the Knapsack problem)
+ * Nodes are connected in a ring virtual topology
+ * The system can recover from single or multiple node failures during computation
+ * When unreachable nodes are detected, the ring automatically rebuilds itself,
+   extracting work units previously assigned to them from caches, and finishing
+   the computation without them
+ * Message passing and node connections are performed via CORBA.
+ * The used CORBA implementation is MICO in local-ORB mode, where each node
+   is its own ORB.
+
+Prerequisites:
+ * MICO 2.3.13 CORBA library built and installed.
+   You may need to build it with the --disable-sl3 option.
+ * G++ version 4.6 and higher and standard Linux build utilities and libraries.
+ * A private IPv4 network where no nodes use port forwarding (can be a VPN)
+ * Hostnames of all the other nodes must be resolvable via DNS or /etc/hosts
+
+Building:
+ * Make sure MICO is installed correctly
+ * Remove "-DVERBOSE" from the Makefile if you do not want to see internal messages
+ * Type "make" and pray
+
+Running:
+ * To start a computation locally and listen to other nodes connecting later, use
+
+   disco-plat [optional-parameters] -f instance-file
+
+
+ * To join a running node and act as free workforce, use
+
+   disco-plat [optional-parameters] -a inet:XX.XX.XX.XX:port
+
+
+ * To join a running node and bring another instance file with you use
+
+   disco-plat [optional-parameters] -a inet:XX.XX.XX.XX:port -f instance-file
+
+
+ * [optional parameters] means any combination of
+
+   [-p port-to-listen-on] [-n network-interface-name] [-o output-file]
+
+
+Remarks:
+ * Time was a very limited resource during development. As a result, the codebase
+   sometimes looks ugly. We are aware that it could use a refactoring pass or two,
+   but there was simply not enough time to do so.
+ * Instance file format is: Algorithm-name <newline> arbitrary text.
+ * In case of the Knapsack problem, it is the following:
+
+Knapsack
+item-count capacity weight cost weight cost weight cost ...
+
+ * Sample instances are provided in the inst folder
+ * Recovery from node failures during startup, termination or restoration
+   is not implemented and such a failure produces undefined behavior
+ * MICO is not a particularly stellar CORBA implementation. In fact, it is
+   downright bad. Do not attempt to run disco-plat in a variable- and long- latency
+   network. Also, ignore the occasional network closing related segfault.
+ * The demo directory contains our experiments with CORBA used for
+   making the implementation work, network connection and data transfer prototyping
+   and learning about its peculiarities.

@@ -22,7 +22,7 @@ inline void sendBoomerangAndAbort(disco_plat::LeftNeighbour_var remoteObject) {
     } catch (CORBA::COMM_FAILURE&) {
         // I am the last one
     }
-    std::cerr << "Two or more nodes have been diconnected from the network!" << std::endl
+    std::cerr << "A node has disconnect during network-rebuild!" << std::endl
               << "Cannot continue, aborting process!" << std::endl;
     abort();   // Goodbye, cruel world!!!
 }
